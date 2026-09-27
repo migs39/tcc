@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ainda não há código: o repositório contém apenas `README.md` e `Especificacao_Detalhada.pdf` (especificação do TCC, fonte de verdade para requisitos). Não existem comandos de build, lint ou testes definidos — atualize esta seção quando a stack for escolhida.
 
+## Regras de git
+
+- **Nunca faça commit ou push sem pedido explícito do usuário**, independentemente de o auto mode estar ligado ou não. Um pedido de commit não autoriza push, e vice-versa.
+
 ## Projeto
 
 TCC (PCS/Poli-USP, 2026): livraria digital em modelo de catálogo que usa **Oblivious Transfer (OT)** para vender chaves simétricas de livros cifrados, de modo que o servidor da loja não saiba quais livros foram comprados.
