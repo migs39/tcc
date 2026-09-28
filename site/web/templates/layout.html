@@ -1,0 +1,27 @@
+{{define "layout"}}<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>{{block "titulo" .}}Livraria{{end}}</title>
+<link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+<header class="topo">
+  <a class="marca" href="/">Livraria</a>
+  {{with .Admin}}
+  <nav>
+    <a href="/admin/">Administradores</a>
+    <span class="quem">{{.Nome}}</span>
+    <form method="post" action="/admin/sair"><button class="link">Sair</button></form>
+  </nav>
+  {{end}}
+</header>
+<main>
+  {{with .Aviso}}<p class="aviso" role="status">{{.}}</p>{{end}}
+  {{with .Erro}}<p class="erro" role="alert">{{.}}</p>{{end}}
+  {{block "conteudo" .}}{{end}}
+</main>
+</body>
+</html>{{end}}

@@ -1,0 +1,13 @@
+# LaTeX (artefatos de compilação)
+docs/especificacao/*.aux
+docs/especificacao/*.log
+docs/especificacao/*.toc
+docs/especificacao/*.out
+docs/especificacao/*.bbl
+docs/especificacao/*.blg
+docs/especificacao/*.lof
+docs/especificacao/*.lot
+docs/especificacao/*.fls
+docs/especificacao/*.fdb_latexmk
+docs/especificacao/*.synctex.gz
+docs/especificacao/especificacao.pdf

@@ -1,0 +1,13 @@
+{{define "titulo"}}Entrar — Administração{{end}}
+{{define "conteudo"}}
+<h1>Área administrativa</h1>
+<form method="post" action="/admin/entrar" class="cartao">
+  <label>E-mail
+    <input type="email" name="email" value="{{.Email}}" required autocomplete="username">
+  </label>
+  <label>Senha
+    <input type="password" name="senha" required autocomplete="current-password">
+  </label>
+  <button type="submit">Entrar</button>
+</form>
+{{end}}

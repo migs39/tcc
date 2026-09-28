@@ -1,0 +1,29 @@
+{{define "titulo"}}Editar administrador{{end}}
+{{define "conteudo"}}
+{{with .Alvo}}
+<h1>{{.Nome}}</h1>
+<p>Situação: <strong>{{if .Ativo}}ativo{{else}}inativo{{end}}</strong></p>
+
+<form method="post" action="/admin/administradores/{{.ID}}" class="cartao">
+  <h2>Dados</h2>
+  <label>Nome <input type="text" name="nome" value="{{.Nome}}" required></label>
+  <label>E-mail <input type="email" name="email" value="{{.Email}}" required></label>
+  <button type="submit">Salvar</button>
+</form>
+
+<form method="post" action="/admin/administradores/{{.ID}}/senha" class="cartao">
+  <h2>Nova senha</h2>
+  <label>Senha (mínimo {{$.TamanhoMinimoSenha}} caracteres)
+    <input type="password" name="senha" required minlength="{{$.TamanhoMinimoSenha}}" autocomplete="new-password">
+  </label>
+  <button type="submit">Trocar senha</button>
+  <p class="nota">Encerra todas as sessões deste administrador.</p>
+</form>
+
+<form method="post" action="/admin/administradores/{{.ID}}/{{if .Ativo}}desativar{{else}}reativar{{end}}" class="cartao">
+  <h2>Acesso</h2>
+  <button type="submit" class="{{if .Ativo}}perigo{{end}}">{{if .Ativo}}Desativar{{else}}Reativar{{end}}</button>
+</form>
+{{end}}
+<p><a href="/admin/">Voltar</a></p>
+{{end}}

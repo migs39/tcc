@@ -1,0 +1,17 @@
+{{define "titulo"}}Novo administrador{{end}}
+{{define "conteudo"}}
+<h1>Novo administrador</h1>
+<form method="post" action="/admin/administradores" class="cartao">
+  <label>Nome
+    <input type="text" name="nome" value="{{.Nome}}" required>
+  </label>
+  <label>E-mail
+    <input type="email" name="email" value="{{.Email}}" required autocomplete="off">
+  </label>
+  <label>Senha (mínimo {{.TamanhoMinimoSenha}} caracteres)
+    <input type="password" name="senha" required minlength="{{.TamanhoMinimoSenha}}" autocomplete="new-password">
+  </label>
+  <button type="submit">Cadastrar</button>
+  <a href="/admin/">Cancelar</a>
+</form>
+{{end}}

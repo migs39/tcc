@@ -1,0 +1,20 @@
+{{define "titulo"}}Administradores{{end}}
+{{define "conteudo"}}
+<div class="cabecalho">
+  <h1>Administradores</h1>
+  <a class="botao" href="/admin/administradores/novo">Novo administrador</a>
+</div>
+<table>
+  <thead><tr><th>Nome</th><th>E-mail</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  {{range .Lista}}
+    <tr>
+      <td>{{.Nome}}</td>
+      <td>{{.Email}}</td>
+      <td>{{if .Ativo}}Ativo{{else}}Inativo{{end}}</td>
+      <td><a href="/admin/administradores/{{.ID}}">Editar</a></td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}

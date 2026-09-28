@@ -1,0 +1,20 @@
+# Postgres de desenvolvimento (D-003). Não usar estas credenciais fora da máquina local.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: livraria
+      POSTGRES_PASSWORD: livraria_dev
+      POSTGRES_DB: livraria
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U livraria -d livraria"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
