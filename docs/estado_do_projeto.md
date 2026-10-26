@@ -3,7 +3,7 @@
 Atualizado em: 2026-10-26
 
 Documento para o grupo. Resume o que foi decidido, onde está cada parte e o que falta.
-- **Detalhe e justificativa das decisões:** `CLAUDE.md`, seção "Decisões tomadas" (IDs D-001 a D-006).
+- **Detalhe e justificativa das decisões:** `CLAUDE.md`, seção "Decisões tomadas" (IDs D-001 a D-007).
 - **Divergências e lacunas entre PRD e especificação:** `docs/divergencias_docs.md`.
 
 ---
@@ -43,6 +43,7 @@ Se algo falhar entre os passos 3 e 7, o programa reexecuta o receptor com a seme
 | D-004 | Programa local | Deixa de ser offline; usa rede só com o site e a CDN | Decidida; especificação v3 atualizada, PRD pendente |
 | D-005 | Modelo do catálogo | Livro completo com capa (Postgres, 2 MB); faixas de preço editáveis e imutáveis; categorias controladas; nova versão de grupo só quando a composição muda | Decidida e implementada (passo 2) |
 | D-006 | Navegação e busca | No programa local, sobre o pacote completo do catálogo; site sem vitrine pública; miniaturas 200×300 JPEG | Decidida; miniaturas implementadas, pacote no passo 3 |
+| D-007 | Formato do pacote | ZIP único determinístico (JSON + miniaturas), pacote completo com ETag, assinatura Ed25519 + hash público, versão só cresce | Decidida e implementada (passo 3) |
 
 **Descartados, com motivo registrado no CLAUDE.md:**
 - emp-ot (não suporta Windows);
@@ -60,7 +61,7 @@ Se algo falhar entre os passos 3 e 7, o programa reexecuta o receptor com a seme
 | Gateway de pagamento: mock (recomendado) ou sandbox real | Passo 4 |
 | Como o pagamento se encaixa com o programa local (o programa abre o navegador ou intermedeia) | Passo 4 |
 | Variante de OT: 1-de-n repetido (Naor–Pinkas 1999 sobre 1-de-2), k-de-n ou GOT | Passo 6 |
-| Formato dos artefatos: pacote do catálogo e atualização incremental (D-006) | Passo 3 |
+| ~~Formato do pacote do catálogo~~ decidido em D-007 | — |
 | Formato dos artefatos: requisição OT, resposta OT, tokens, livro cifrado | Passos 6–7 |
 | Interface do programa local (agora também é a vitrine, D-006) | Programa local |
 | Algoritmo simétrico (≥ 128 bits, RNF01) | Passo 6 |
@@ -80,7 +81,7 @@ Se algo falhar entre os passos 3 e 7, o programa reexecuta o receptor com a seme
 | 0 | Esqueleto: repositório, módulo Go, Postgres (Docker), migrações, testes | — | **Concluído**: `docker-compose.yml` (Postgres 17), migrações goose embutidas e aplicadas na subida, bancos de teste isolados por schema |
 | 1 | Admins: cadastro, login, gestão; primeiro admin por comando de seed | RF01, UC01 | **Concluído**: argon2id, sessão com hash do token, desativar/reativar (nunca o último ativo), troca de senha encerra sessões, CSRF, CSP. 13 testes passando (9 de integração contra Postgres) |
 | 2 | Catálogo: CRUD de livros, preços discretos, categorias, capas, grupos versionados | RF02, RF03, UC02, UC03 | **Concluído** (D-005): telas de livros, preços e categorias; capa no Postgres; RF03 imposto também pelo banco; versões de grupo imutáveis. miniatura 200×300 para o pacote (D-006); original só na área admin. 24 testes passando no site |
-| 3 | Pacote do catálogo: catálogo inteiro (metadados, versões de grupo, miniaturas), igual para todos, com atualização incremental; a busca roda no programa local (D-006) | RF04, RNF02, UC04 | Não iniciado; formato do pacote em aberto |
+| 3 | Pacote do catálogo: ZIP único e determinístico (catalogo.json + miniaturas), igual para todos, assinado (Ed25519) com hash público; a busca roda no programa local (D-006, D-007) | RF04, RNF02, UC04 | **Concluído**: `GET /catalogo.zip` (ETag, 304) e `GET /catalogo/hash`; versão nova só quando o conteúdo muda; 28 testes passando no site |
 | 4 | Checkout sem conta: e-mail, gateway, aprovado/recusado | RF05, RF06, RF13 | Não iniciado |
 | 5 | E-mail com a resposta do OT (stub), assíncrono | RF14, RNF04 | Não iniciado |
 | 6 | OT real no lado sender (binário C++ auxiliar com libOTe/MR19), com testes de build no Windows, determinismo por semente e benchmark (RNF03, RNF05) | RF07, RF08 | Não iniciado; faltam CMake e compilador C++ |

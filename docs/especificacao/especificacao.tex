@@ -895,6 +895,16 @@ do catálogo. As capas seguem no pacote como miniaturas de 200 por 300 pixels em
 JPEG, geradas no envio da capa, para que o tamanho do pacote não dependa das
 imagens originais.
 
+\item \textbf{Pacote do catálogo:} um arquivo ZIP único por versão, com os
+metadados em JSON e as miniaturas. O arquivo é gerado de forma
+determinística, de modo que o mesmo conteúdo produz sempre os mesmos bytes e o
+resumo SHA-256 identifica a versão. O programa local sempre baixa o pacote
+completo, revalidando-o pelo resumo, para que todos os clientes façam a mesma
+requisição. O sistema web assina cada versão com Ed25519 e publica versão,
+resumo e assinatura, o que permite a qualquer pessoa verificar que recebeu o
+mesmo catálogo que os demais. O programa local confere a assinatura com a
+chave pública embutida e recusa versões anteriores à que já possui.
+
 \item \textbf{Assinatura cega:} RSA cego padronizado \cite{rfc9474}.
 
 \item \textbf{Programa local:} conecta-se apenas ao sistema web e à CDN.
@@ -1128,7 +1138,9 @@ anonimato dos tokens.
 \item Prazo de reenvio da resposta do OT (RF15).
 \item Gateway de pagamento e sua integração com o programa local.
 \item Proteção da semente armazenada no programa local.
-\item Formato do pacote do catálogo e de sua atualização incremental.
+\item Compromissos das chaves dos livros no pacote do catálogo, para o
+programa local conferir as chaves extraídas (defesa contra o ataque de falha
+seletiva no OT).
 \item Interface do programa local, que também passa a ser a vitrine do
 catálogo.
 \end{itemize}

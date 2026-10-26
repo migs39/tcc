@@ -4,10 +4,13 @@
 //
 //	DATABASE_URL  conexão com o PostgreSQL (padrão: Postgres do docker-compose.yml)
 //	ENDERECO      endereço de escuta (padrão: localhost:8080)
+//	CHAVE_PACOTE  arquivo com a chave Ed25519 do pacote do catálogo (padrão:
+//	              chave_pacote.ed25519; criado se não existir)
 package main
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -19,6 +22,7 @@ import (
 	"tcc/site/internal/admin"
 	"tcc/site/internal/catalogo"
 	"tcc/site/internal/db"
+	"tcc/site/internal/pacote"
 	"tcc/site/web"
 )
 
@@ -57,9 +61,21 @@ func rodar(log *slog.Logger) error {
 	}
 	hAdmin := admin.NovosHandlers(svcAdmin, tpl, log)
 
+	caminhoChave := getenv("CHAVE_PACOTE", "chave_pacote.ed25519")
+	chave, criada, err := pacote.CarregarOuCriarChave(caminhoChave)
+	if err != nil {
+		return err
+	}
+	svcPacote := pacote.NovoServico(pool, chave)
+	if criada {
+		os.Stderr.WriteString("chave do pacote do catálogo criada em " + caminhoChave +
+			"\nchave pública (embutir no programa local): " + hex.EncodeToString(svcPacote.ChavePublica()) + "\n")
+	}
+
 	srv := &http.Server{
-		Addr:              getenv("ENDERECO", "localhost:8080"),
-		Handler:           NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(catalogo.NovoServico(pool), hAdmin, tpl, log)),
+		Addr: getenv("ENDERECO", "localhost:8080"),
+		Handler: NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(catalogo.NovoServico(pool), hAdmin, tpl, log),
+			pacote.NovosHandlers(svcPacote, log)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

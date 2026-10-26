@@ -264,3 +264,10 @@ Já aplicada no fonte LaTeX e no PDF da v3.
 | 5.1 | Sistema web sem vitrine pública; item novo "Navegação e busca" com as miniaturas de 200×300 JPEG. |
 | 5.2.4 | Linha "Busca": escolhida "pacote completo, navegado no programa local"; descartadas "vitrine no navegador" e "busca no servidor". |
 | 5.3 | Novas questões: formato do pacote do catálogo e da atualização incremental; interface do programa local. |
+
+## Revisão de 2026-10-26: pacote do catálogo (D-007)
+
+| Seção | Mudança |
+|---|---|
+| 5.1 | Item novo "Pacote do catálogo": ZIP único determinístico, pacote completo revalidado pelo SHA-256, assinatura Ed25519 com versão, resumo e assinatura publicados; o programa local confere a assinatura e recusa versões anteriores. |
+| 5.3 | Sai "formato do pacote do catálogo" (decidido). Entra "compromissos das chaves dos livros no pacote" (defesa contra falha seletiva no OT). |

@@ -143,7 +143,17 @@ Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa
 - **Miniaturas:** geradas no upload da capa, 200×300 px, JPEG qualidade 80, capa encaixada num quadro branco com proporção preservada; a reencodificação descarta metadados da imagem. Dependência nova: `golang.org/x/image` (decodificar WebP e redimensionar).
 - **Justificativa:** o site só observa "alguém baixou o catálogo inteiro". Diferente da vitrine no navegador, a privacidade da navegação não depende de o site servir JavaScript honesto (mesmo raciocínio da D-004). Busca local atende RNF02 com folga, e o pacote já leva as versões de grupo que o programa usa para montar a requisição do OT. Continua sendo **escolha de engenharia**, não garantia formal.
 - **Substitui** o "filtro no navegador" da D-003. O passo 3 do plano passa a ser "pacote do catálogo".
-- **Em aberto:** formato do pacote e da atualização incremental (entra em "formato dos artefatos"); interface do programa local.
+- **Em aberto:** interface do programa local. (Formato do pacote: decidido em D-007.)
+
+**D-007 — Formato do pacote do catálogo (2026-10-26)**
+- **Estrutura:** um ZIP único por versão: `catalogo.json` (Deflate) + `miniaturas/{id}.jpg` (sem compressão). **Determinístico**: ordem fixa, data fixa nos arquivos, JSON gerado do banco ordenado por id; mesmo conteúdo produz os mesmos bytes, então o SHA-256 identifica a versão.
+- **Conteúdo do JSON (`formato: 1`):** categorias; grupos (versão atual de cada faixa ativa com livros: `faixa_id`, `preco_centavos`, `versao_grupo_id`, `versao_numero`, `livros` na ordem do OT); livros ativos (metadados, `faixa_id`, `preco_centavos`, caminho da miniatura).
+- **Atualização:** sempre o pacote completo; `GET /catalogo.zip` com ETag = SHA-256 e `Cache-Control: no-cache`; sem mudança, responde 304. Sem deltas: com eles, a requisição revelaria quando o cliente sincronizou pela última vez; assim, todos fazem a mesma requisição.
+- **Versão:** contador por trigger (`catalogo_revisao`) avisa quando regerar; cada versão publicada fica em `pacotes_catalogo`. Versão nova só se o conteúdo diferir da **última** (voltar a um conteúdo antigo gera versão nova; a versão só cresce).
+- **Integridade:** assinatura Ed25519 (biblioteca padrão) sobre `"livraria-ot/catalogo/v1\n" + versão + "\n" + SHA-256 hex`. Vai nos cabeçalhos `Catalogo-Versao`, `Catalogo-SHA256`, `Catalogo-Assinatura`; `GET /catalogo/hash` publica versão, hash e assinatura para comparação ("hash público"). Chave privada em arquivo (`CHAVE_PACOTE`, padrão `chave_pacote.ed25519`, criado se faltar, fora do git); a pública vai embutida no programa local (`go run ./cmd/chave-pacote`).
+- **O programa local deve:** verificar a assinatura com a chave embutida, conferir o SHA-256 do corpo e recusar versão menor que a que já tem (contra rollback).
+- **Medido:** miniatura de 1,6 KB (capa lisa) a 19,8 KB (pior caso, ruído); 1.000 livros ficam abaixo de ~20 MB.
+- **Motivo:** um download e uma assinatura; hash público permite detectar catálogo personalizado por cliente, base contra o ataque de falha seletiva no OT (passo 6: incluir compromissos das chaves dos livros no pacote).
 ## Escopo do MVP e ordem de implementação
 
 MVP = compra privada ponta a ponta de um grupo de livros (todos os RFs essenciais). RF04 completo e RF15 podem vir depois.
@@ -169,7 +179,8 @@ TCC/
     cmd/admin-seed/        cria o primeiro admin (RF01)
     internal/admin/        contas, login, sessão (RF01)
     internal/catalogo/     livros, preços, categorias, capas, grupos versionados (RF02, RF03, RF07)
-    internal/pacote/       pacote do catálogo para o programa local (RF04, D-006) (a criar)
+    internal/pacote/       pacote do catálogo: ZIP assinado, /catalogo.zip e /catalogo/hash (RF04, D-006, D-007)
+    cmd/chave-pacote/      mostra (e cria) a chave Ed25519 do pacote
     internal/db/           conexão e migrações (dbteste/: bancos de teste)
     web/                   templates/, static/ e renderização
     migrations/            SQL no formato goose
@@ -182,10 +193,11 @@ Comandos (na raiz sobe o Postgres; o resto dentro de `site/`):
 ```bash
 docker compose up -d                                   # Postgres de desenvolvimento (localhost:5432)
 go run ./cmd/admin-seed -nome "Nome" -email a@b.com    # primeiro admin (senha pela entrada padrão ou ADMIN_SENHA)
+go run ./cmd/chave-pacote                              # chave pública do pacote do catálogo (cria a chave se faltar)
 go run ./cmd/site                                      # site em http://localhost:8080 (migrações aplicadas na subida)
 go test ./...                                          # testes; os de integração são pulados sem Postgres
 go vet ./... && gofmt -l .                             # checagens
 ```
 
-Variáveis: `DATABASE_URL`, `ENDERECO` (site); `TEST_DATABASE_URL` (testes; cada teste usa um schema próprio, apagado no fim).
+Variáveis: `DATABASE_URL`, `ENDERECO`, `CHAVE_PACOTE` (site); `TEST_DATABASE_URL` (testes; cada teste usa um schema próprio, apagado no fim).
 Convenções do site: sem log de acesso (só erros, sem dados de visitante); CSP `default-src 'self'`; CSRF via `http.CrossOriginProtection`; avisos após redirect vão por chave fixa na URL, nunca com dados.

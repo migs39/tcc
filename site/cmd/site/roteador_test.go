@@ -3,6 +3,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -20,6 +25,7 @@ import (
 	"tcc/site/internal/admin"
 	"tcc/site/internal/catalogo"
 	"tcc/site/internal/db/dbteste"
+	"tcc/site/internal/pacote"
 	"tcc/site/web"
 )
 
@@ -42,7 +48,10 @@ func novoServidorCompleto(t *testing.T) (*httptest.Server, *admin.Servico, *cata
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	hAdmin := admin.NovosHandlers(svc, tpl, log)
 	cat := catalogo.NovoServico(pool)
-	srv := httptest.NewTLSServer(NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(cat, hAdmin, tpl, log)))
+	_, chavePacote, _ := ed25519.GenerateKey(nil)
+	srv := httptest.NewTLSServer(NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(cat, hAdmin, tpl, log),
+		pacote.NovosHandlers(pacote.NovoServico(pool, chavePacote), log)))
+	chavePublicaTeste = chavePacote.Public().(ed25519.PublicKey)
 	t.Cleanup(srv.Close)
 	return srv, svc, cat
 }
@@ -351,5 +360,69 @@ func TestFluxoCatalogo(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("GET %s: %d", caminho, resp.StatusCode)
 		}
+	}
+}
+
+// chavePublicaTeste é a chave do pacote do último servidor de teste criado.
+var chavePublicaTeste ed25519.PublicKey
+
+// D-006 / L1: o pacote é público, igual para todos e assinado; com o ETag
+// certo, nada é baixado de novo.
+func TestPacoteDoCatalogo(t *testing.T) {
+	srv, _, cat := novoServidorCompleto(t)
+	ctx := context.Background()
+	c, _ := cat.CriarCategoria(ctx, "Ficção")
+	f, _ := cat.CriarFaixa(ctx, 2990)
+	if _, err := cat.Cadastrar(ctx, catalogo.DadosLivro{Titulo: "Dom Casmurro", Autor: "Machado de Assis", CategoriaID: c.ID, FaixaID: f.ID}); err != nil {
+		t.Fatal(err)
+	}
+
+	anonimo := cliente(t, srv)
+	resp, err := anonimo.Get(srv.URL + "/catalogo.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dados, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "application/zip" {
+		t.Fatalf("GET /catalogo.zip: %d %q", resp.StatusCode, resp.Header.Get("Content-Type"))
+	}
+
+	// O programa local confere: hash do corpo, versão e assinatura.
+	versao, _ := strconv.ParseInt(resp.Header.Get("Catalogo-Versao"), 10, 64)
+	hash := sha256.Sum256(dados)
+	assinatura, _ := base64.StdEncoding.DecodeString(resp.Header.Get("Catalogo-Assinatura"))
+	if resp.Header.Get("Catalogo-SHA256") != hex.EncodeToString(hash[:]) ||
+		!pacote.Verificar(chavePublicaTeste, versao, hash, assinatura) {
+		t.Fatal("cabeçalhos do pacote não conferem com o corpo")
+	}
+	if !bytes.Contains(dados, []byte("catalogo.json")) {
+		t.Fatal("ZIP sem catalogo.json")
+	}
+
+	req, _ := http.NewRequest("GET", srv.URL+"/catalogo.zip", nil)
+	req.Header.Set("If-None-Match", resp.Header.Get("ETag"))
+	resp, _ = anonimo.Do(req)
+	corpo, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusNotModified || len(corpo) != 0 {
+		t.Fatalf("revalidação com ETag igual: %d, %d bytes", resp.StatusCode, len(corpo))
+	}
+
+	// Hash público: igual ao do pacote baixado.
+	resp, _ = anonimo.Get(srv.URL + "/catalogo/hash")
+	var h pacote.RespostaHash
+	json.NewDecoder(resp.Body).Decode(&h)
+	resp.Body.Close()
+	if h.Versao != versao || h.SHA256 != hex.EncodeToString(hash[:]) || h.Tamanho != len(dados) {
+		t.Fatalf("/catalogo/hash diverge do pacote: %+v", h)
+	}
+
+	// Outro visitante recebe exatamente os mesmos bytes.
+	resp, _ = cliente(t, srv).Get(srv.URL + "/catalogo.zip")
+	outro, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !bytes.Equal(outro, dados) {
+		t.Fatal("dois visitantes receberam pacotes diferentes")
 	}
 }
