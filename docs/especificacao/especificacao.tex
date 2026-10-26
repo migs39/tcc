@@ -549,7 +549,8 @@ preço. O catálogo é publicado pelo sistema web como um pacote completo, na
 mesma forma para todos os clientes, e a busca e a navegação são feitas no
 programa local, de modo que o servidor não observe os critérios de busca nem
 os livros consultados. O sistema web não oferece vitrine pública nem imagens
-de capa avulsas.
+de capa avulsas; sua única página pública é a de apresentação e download, igual
+para todos os visitantes.
 
 \item \textbf{RF05 --- Compra sem cadastro de cliente:} o sistema deve
 permitir compra sem criação de conta de cliente.
@@ -888,7 +889,10 @@ verificadas por testes automatizados durante a implementação.
 \item \textbf{Sistema web:} linguagem Go, banco PostgreSQL, páginas de
 administração renderizadas no servidor, sem recursos de terceiros; catálogo
 publicado como pacote completo, sem vitrine pública; biblioteca de OT acessada
-por um binário auxiliar.
+por um binário auxiliar. A única página pública é a de apresentação e
+download, sem cookies, scripts ou recursos de terceiros, que exibe a versão,
+o resumo SHA-256 e a chave pública do catálogo atual para que qualquer pessoa
+possa conferi-los.
 
 \item \textbf{Navegação e busca:} no programa local, sobre o pacote completo
 do catálogo. As capas seguem no pacote como miniaturas de 200 por 300 pixels em

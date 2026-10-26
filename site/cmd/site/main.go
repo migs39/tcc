@@ -75,7 +75,7 @@ func rodar(log *slog.Logger) error {
 	srv := &http.Server{
 		Addr: getenv("ENDERECO", "localhost:8080"),
 		Handler: NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(catalogo.NovoServico(pool), hAdmin, tpl, log),
-			pacote.NovosHandlers(svcPacote, log)),
+			pacote.NovosHandlers(svcPacote, tpl, log)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

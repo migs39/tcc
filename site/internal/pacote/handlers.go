@@ -7,22 +7,52 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"tcc/site/web"
 )
 
 type Handlers struct {
 	svc *Servico
+	tpl *web.Templates
 	log *slog.Logger
 }
 
-func NovosHandlers(svc *Servico, log *slog.Logger) *Handlers {
-	return &Handlers{svc: svc, log: log}
+func NovosHandlers(svc *Servico, tpl *web.Templates, log *slog.Logger) *Handlers {
+	return &Handlers{svc: svc, tpl: tpl, log: log}
 }
 
-// Registrar monta as rotas públicas do pacote. Todo visitante recebe
-// exatamente a mesma resposta; nada aqui depende de quem pede (L1, D-006).
+// Registrar monta as rotas públicas: a página de apresentação e download e o
+// pacote. Todo visitante recebe exatamente a mesma resposta; nada aqui depende
+// de quem pede (L1, D-006).
 func (h *Handlers) Registrar(mux *http.ServeMux) {
+	mux.HandleFunc("GET /{$}", h.inicio)
 	mux.HandleFunc("GET /catalogo.zip", h.zip)
 	mux.HandleFunc("GET /catalogo/hash", h.hash)
+}
+
+type dadosInicio struct {
+	web.Base
+	Versao         int64
+	Livros, Grupos int
+	TamanhoKB      int
+	SHA256         string
+	ChavePublica   string
+}
+
+// inicio é a página pública: o que a loja promete, como funciona e os dados
+// para conferir que todos recebem o mesmo catálogo.
+func (h *Handlers) inicio(w http.ResponseWriter, r *http.Request) {
+	d := dadosInicio{ChavePublica: hex.EncodeToString(h.svc.ChavePublica())}
+	if p, err := h.svc.Atual(r.Context()); err != nil {
+		h.log.Error("gerando pacote para a página inicial", "erro", err)
+	} else {
+		d.Versao, d.Livros, d.Grupos = p.Versao, p.Livros, p.Grupos
+		d.TamanhoKB = (len(p.Dados) + 1023) / 1024
+		d.SHA256 = hex.EncodeToString(p.SHA256[:])
+	}
+	if err := h.tpl.Renderizar(w, http.StatusOK, "inicio", d); err != nil {
+		h.log.Error("renderizando início", "erro", err)
+	}
 }
 
 func (h *Handlers) atual(w http.ResponseWriter, r *http.Request) (*Pacote, bool) {

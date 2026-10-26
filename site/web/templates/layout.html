@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/static/estilo.css">
 </head>
 <body>
+{{block "corpo" .}}
 <header class="topo">
   <a class="marca" href="/">Livraria</a>
   {{with .Admin}}
@@ -26,5 +27,6 @@
   {{with .Erro}}<p class="erro" role="alert">{{.}}</p>{{end}}
   {{block "conteudo" .}}{{end}}
 </main>
+{{end}}
 </body>
 </html>{{end}}

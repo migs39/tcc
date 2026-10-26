@@ -271,3 +271,10 @@ Já aplicada no fonte LaTeX e no PDF da v3.
 |---|---|
 | 5.1 | Item novo "Pacote do catálogo": ZIP único determinístico, pacote completo revalidado pelo SHA-256, assinatura Ed25519 com versão, resumo e assinatura publicados; o programa local confere a assinatura e recusa versões anteriores. |
 | 5.3 | Sai "formato do pacote do catálogo" (decidido). Entra "compromissos das chaves dos livros no pacote" (defesa contra falha seletiva no OT). |
+
+## Revisão de 2026-10-26: página pública de apresentação e download
+
+| Seção | Mudança |
+|---|---|
+| RF04 | Acrescenta que a única página pública do sistema web é a de apresentação e download, igual para todos. |
+| 5.1 | Item "Sistema web": a página pública não usa cookies, scripts nem recursos de terceiros e exibe versão, SHA-256 e chave pública do catálogo atual. |

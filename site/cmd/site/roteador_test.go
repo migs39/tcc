@@ -50,7 +50,7 @@ func novoServidorCompleto(t *testing.T) (*httptest.Server, *admin.Servico, *cata
 	cat := catalogo.NovoServico(pool)
 	_, chavePacote, _ := ed25519.GenerateKey(nil)
 	srv := httptest.NewTLSServer(NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(cat, hAdmin, tpl, log),
-		pacote.NovosHandlers(pacote.NovoServico(pool, chavePacote), log)))
+		pacote.NovosHandlers(pacote.NovoServico(pool, chavePacote), tpl, log)))
 	chavePublicaTeste = chavePacote.Public().(ed25519.PublicKey)
 	t.Cleanup(srv.Close)
 	return srv, svc, cat
@@ -76,10 +76,10 @@ func TestCabecalhosDeSeguranca(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	rec := httptest.NewRecorder()
 	NovoRoteador(tpl, log, admin.NovosHandlers(nil, tpl, log)).
-		ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+		ServeHTTP(rec, httptest.NewRequest("GET", "/admin/entrar", nil))
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("GET /: status %d", rec.Code)
+		t.Fatalf("GET /admin/entrar: status %d", rec.Code)
 	}
 	csp := rec.Header().Get("Content-Security-Policy")
 	if !strings.Contains(csp, "default-src 'self'") || strings.Contains(csp, "http") {
@@ -91,7 +91,7 @@ func TestCabecalhosDeSeguranca(t *testing.T) {
 	corpo := rec.Body.String()
 	for _, externo := range []string{"http://", "https://", "//cdn", "googleapis"} {
 		if strings.Contains(corpo, externo) {
-			t.Fatalf("página inicial referencia recurso externo (%q)", externo)
+			t.Fatalf("tela de login referencia recurso externo (%q)", externo)
 		}
 	}
 }
@@ -424,5 +424,42 @@ func TestPacoteDoCatalogo(t *testing.T) {
 	resp.Body.Close()
 	if !bytes.Equal(outro, dados) {
 		t.Fatal("dois visitantes receberam pacotes diferentes")
+	}
+}
+
+// Página pública de download: renderiza com os dados reais do pacote e não
+// referencia nenhum recurso externo (D-003, D-006).
+func TestPaginaInicial(t *testing.T) {
+	srv, _, cat := novoServidorCompleto(t)
+	ctx := context.Background()
+	c, _ := cat.CriarCategoria(ctx, "Ficção")
+	f, _ := cat.CriarFaixa(ctx, 2990)
+	cat.Cadastrar(ctx, catalogo.DadosLivro{Titulo: "Dom Casmurro", Autor: "Machado de Assis", CategoriaID: c.ID, FaixaID: f.ID})
+
+	anonimo := cliente(t, srv)
+	resp, err := anonimo.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	corpo, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /: %d", resp.StatusCode)
+	}
+	if len(resp.Cookies()) != 0 {
+		t.Fatal("página pública definiu cookie")
+	}
+	resp, _ = anonimo.Get(srv.URL + "/catalogo/hash")
+	var h pacote.RespostaHash
+	json.NewDecoder(resp.Body).Decode(&h)
+	resp.Body.Close()
+	pagina := string(corpo)
+	if !strings.Contains(pagina, h.SHA256) || !strings.Contains(pagina, hex.EncodeToString(chavePublicaTeste)) {
+		t.Fatal("página inicial não mostra o hash do pacote atual e a chave pública")
+	}
+	for _, externo := range []string{"http://", "https://", "//cdn", "googleapis", "<script"} {
+		if strings.Contains(pagina, externo) {
+			t.Fatalf("página inicial referencia recurso externo ou script (%q)", externo)
+		}
 	}
 }

@@ -17,6 +17,9 @@ type Pacote struct {
 	SHA256     [32]byte
 	Assinatura []byte
 	Dados      []byte
+	// Resumo para a página pública.
+	Livros int
+	Grupos int
 }
 
 type Servico struct {
@@ -66,6 +69,9 @@ func (s *Servico) Atual(ctx context.Context) (*Pacote, error) {
 			return err
 		}
 		p, err = s.publicar(ctx, tx, dados)
+		if err == nil {
+			p.Livros, p.Grupos = len(cat.Livros), len(cat.Grupos)
+		}
 		return err
 	})
 	if err != nil {

@@ -14,11 +14,6 @@ type Modulo interface{ Registrar(*http.ServeMux) }
 func NovoRoteador(tpl *web.Templates, log *slog.Logger, modulos ...Modulo) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(web.Estaticos())))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		if err := tpl.Renderizar(w, http.StatusOK, "inicio", web.Base{}); err != nil {
-			log.Error("renderizando início", "erro", err)
-		}
-	})
 	for _, m := range modulos {
 		m.Registrar(mux)
 	}

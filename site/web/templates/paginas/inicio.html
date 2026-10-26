@@ -1,5 +1,111 @@
-{{define "titulo"}}Livraria{{end}}
-{{define "conteudo"}}
-<h1>Livraria</h1>
-<p>O catálogo é consultado e comprado pelo programa local da livraria, que baixa o catálogo inteiro e faz a busca no seu computador. Este site não mostra quais livros você olha.</p>
+{{define "titulo"}}Livraria — compre sem revelar o que comprou{{end}}
+{{/* Página pública de apresentação e download. Igual para todos os
+     visitantes: sem cookies, scripts ou recursos de terceiros (D-003, D-006). */}}
+{{define "corpo"}}
+<header class="lp-topo">
+  <a class="lp-marca" href="/"><span class="lp-selo" aria-hidden="true"></span>Livraria</a>
+  <nav>
+    <a href="#como">Como funciona</a>
+    <a href="#verificar">Verificar catálogo</a>
+    <a class="lp-botao lp-botao-pequeno" href="#baixar">Baixar</a>
+  </nav>
+</header>
+
+<section class="lp-hero">
+  <div class="lp-hero-texto">
+    <p class="lp-sobretitulo">Livraria digital com Oblivious Transfer</p>
+    <h1>Compre livros sem contar a ninguém <em>quais</em> livros você comprou.</h1>
+    <p class="lp-lead">A loja recebe o pagamento, mas não fica sabendo quais livros você escolheu. A escolha é protegida por um protocolo criptográfico, e os livros só são abertos no seu computador.</p>
+    <div class="lp-acoes">
+      <a class="lp-botao" href="#baixar">Baixar o programa</a>
+      <a class="lp-botao lp-botao-contorno" href="#como">Como funciona</a>
+    </div>
+  </div>
+  <div class="lp-ilustracao" aria-hidden="true">
+    <div class="lp-estante">
+      <span class="lp-livro l1"></span><span class="lp-livro l2"></span><span class="lp-livro l3"></span>
+      <span class="lp-livro l4"></span><span class="lp-livro l5"></span><span class="lp-livro l6"></span>
+    </div>
+    <div class="lp-cartao-segredo">
+      <span class="lp-cadeado"></span>
+      <p><strong>Loja</strong> sabe: 3 livros de R$ 29,90</p>
+      <p><strong>Loja</strong> não sabe: quais</p>
+    </div>
+  </div>
+</section>
+
+<main class="lp-conteudo">
+  <section id="como" class="lp-secao">
+    <p class="lp-sobretitulo">Como funciona</p>
+    <h2>Três passos, e a escolha fica com você</h2>
+    <div class="lp-passos">
+      <article>
+        <span class="lp-numero">1</span>
+        <h3>Escolha no programa</h3>
+        <p>O programa baixa o catálogo inteiro. A busca acontece no seu computador; a loja não vê o que você procura.</p>
+      </article>
+      <article>
+        <span class="lp-numero">2</span>
+        <h3>Pague pelo grupo</h3>
+        <p>Livros de mesmo preço formam um grupo. Você paga por N livros do grupo, e o protocolo entrega as chaves sem revelar quais.</p>
+      </article>
+      <article>
+        <span class="lp-numero">3</span>
+        <h3>Leia no seu computador</h3>
+        <p>Os livros chegam cifrados. A chave só existe no programa, no seu computador, e nunca passa pela rede.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="lp-secao lp-comparacao">
+    <div>
+      <h3>O que a loja sabe</h3>
+      <ul>
+        <li>Seu e-mail e o pagamento</li>
+        <li>O grupo de preço e quantos livros</li>
+        <li>Que o catálogo inteiro foi baixado</li>
+      </ul>
+    </div>
+    <div class="lp-nao-sabe">
+      <h3>O que a loja não sabe</h3>
+      <ul>
+        <li>Quais livros você escolheu</li>
+        <li>O que você procurou no catálogo</li>
+        <li>A chave que abre seus livros</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="verificar" class="lp-secao">
+    <p class="lp-sobretitulo">Transparência</p>
+    <h2>Todo mundo recebe o mesmo catálogo</h2>
+    <p class="lp-texto">Cada versão do catálogo é assinada pela loja e tem um resumo público. Se a loja tentasse mostrar um catálogo diferente para alguém, o resumo não bateria.</p>
+    {{if .Versao}}
+    <dl class="lp-catalogo">
+      <div><dt>Versão</dt><dd>{{.Versao}}</dd></div>
+      <div><dt>Livros</dt><dd>{{.Livros}}</dd></div>
+      <div><dt>Grupos de preço</dt><dd>{{.Grupos}}</dd></div>
+      <div><dt>Tamanho</dt><dd>{{.TamanhoKB}} KB</dd></div>
+      <div class="lp-largo"><dt>Resumo SHA-256</dt><dd><code>{{.SHA256}}</code></dd></div>
+      <div class="lp-largo"><dt>Chave pública da loja (Ed25519)</dt><dd><code>{{.ChavePublica}}</code></dd></div>
+    </dl>
+    <p class="lp-nota">Compare com <a href="/catalogo/hash">/catalogo/hash</a>. O programa confere a assinatura sozinho.</p>
+    {{else}}
+    <p class="lp-nota">Informações do catálogo indisponíveis no momento.</p>
+    {{end}}
+  </section>
+
+  <section id="baixar" class="lp-secao lp-download">
+    <div>
+      <h2>Programa local</h2>
+      <p>Windows · gratuito · conversa só com a loja e com a distribuição dos livros, sem telemetria.</p>
+    </div>
+    <span class="lp-botao lp-botao-desativado" aria-disabled="true">Em desenvolvimento</span>
+  </section>
+</main>
+
+<footer class="lp-rodape">
+  <p>TCC · Engenharia de Computação · Escola Politécnica da USP · 2026</p>
+  <p>Esta página não usa cookies, analytics nem recursos de terceiros.</p>
+</footer>
 {{end}}
