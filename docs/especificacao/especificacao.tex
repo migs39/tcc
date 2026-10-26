@@ -1126,6 +1126,110 @@ sistema web. \\
 \end{tabularx}
 \end{table}
 
+\section{Estado da implementação}\label{sec:estado}
+
+Esta seção registra o andamento da Fase 4 em 26 de outubro de 2026. A
+implementação segue os passos planejados para o sistema web, na ordem do
+método; a CDN e o programa local ainda não foram iniciados. O código está no
+repositório do projeto (\url{https://github.com/migs39/tcc}).
+
+\begin{table}[H]
+\centering
+\caption{Passos da implementação do sistema web}\label{tab:passos}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.075\textwidth}
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{0.22\textwidth}
+  >{\raggedright\arraybackslash}p{0.15\textwidth}@{}}
+\toprule
+\textbf{Passo} & \textbf{Entrega} & \textbf{Requisitos} & \textbf{Situação} \\
+\midrule
+0 & Base: banco de dados, migrações e testes isolados & --- & Concluído \\
+1 & Cadastro, autenticação e gestão de administradores & RF01, UC01 & Concluído \\
+2 & Catálogo, preços discretos, capas e grupos versionados & RF02, RF03, RF07, UC02, UC03 & Concluído \\
+3 & Pacote do catálogo e página pública & RF04, UC04 & Concluído \\
+4 & Compra sem conta, e-mail e pagamento & RF05, RF06, RF13 & Não iniciado \\
+5 & Envio da resposta do OT por e-mail & RF14, RNF04 & Não iniciado \\
+6 & OT no sistema web, com a biblioteca libOTe & RF07, RF08 & Não iniciado \\
+7 & Emissão de tokens com assinatura cega & RF16 & Não iniciado \\
+8 & Recebimento e validação do reporte da CDN & RF18, UC17 & Não iniciado \\
+9 & Reenvio da resposta do OT & RF15 & Não iniciado \\
+10 & Testes de privacidade e de carga & RNF02--RNF05 & Não iniciado \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{O que os passos concluídos entregam}
+
+\begin{itemize}
+\item \textbf{Administradores (RF01):} cadastro, autenticação e gestão de
+perfis, inclusive desativação, que nunca deixa o sistema sem administrador
+ativo. As senhas são guardadas com argon2id; a sessão usa um token aleatório
+de 256 bits, do qual só o resumo fica no banco. Requisições de alteração
+vindas de outra origem são recusadas.
+
+\item \textbf{Catálogo e preços (RF02, RF03):} livros com título, autor,
+categoria, descrição, ano, ISBN, editora e capa; faixas de preço e categorias
+mantidas pelo administrador. A restrição de preço ao conjunto pré-definido é
+imposta pelo código e também pelo banco de dados, de modo que nenhum livro
+fica com preço fora do conjunto mesmo que o código seja contornado. Remover
+um livro o desativa, preservando as versões de grupo que o referenciam.
+
+\item \textbf{Grupos versionados (RF07):} cada mudança na composição de um
+grupo de mesmo preço gera uma versão imutável; editar dados de um livro sem
+mudar seu preço não gera versão. A posição do livro na versão é o índice
+usado pelo OT.
+
+\item \textbf{Pacote do catálogo (RF04):} o sistema web publica o catálogo
+como um arquivo ZIP determinístico, com os metadados dos livros ativos, as
+versões atuais dos grupos e as miniaturas das capas, assinado com Ed25519. A
+página pública de apresentação e download mostra a versão, o resumo e a chave
+pública do catálogo atual.
+\end{itemize}
+
+\subsection{Testes automatizados}
+
+O sistema web tem 29 testes automatizados, executados contra um banco
+PostgreSQL real, cada teste em um esquema isolado. Os grupos de testes são:
+
+\begin{itemize}
+\item \textbf{Administradores (9 testes):} formato e verificação do resumo de
+senha; cadastro e validações; autenticação; desativação, que encerra sessões
+e bloqueia o acesso; troca de senha, que encerra as sessões; sessão guardada
+apenas como resumo.
+\item \textbf{Catálogo (9 testes):} preço fora do conjunto recusado pelo
+código e pelo banco (RF03); regras de faixas e categorias; validação de ano e
+ISBN; sequência e imutabilidade das versões de grupo; capas e miniaturas.
+\item \textbf{Pacote do catálogo (3 testes):} conteúdo e ordem dos grupos;
+determinismo; geração de versões; recusa de pacote adulterado, de número de
+versão trocado e de chave errada.
+\item \textbf{Interface web (8 testes):} acesso administrativo restrito a
+administradores autenticados; recusa de requisições de outra origem; fluxo
+completo do catálogo; revalidação do pacote; página pública sem cookies,
+scripts ou recursos de terceiros.
+\end{itemize}
+
+Parte desses testes já verifica propriedades de privacidade do que foi
+implementado: dois visitantes recebem exatamente o mesmo pacote do catálogo, o
+sistema web não oferece imagens de capa avulsas e a página pública não carrega
+recursos externos. Os testes de privacidade do fluxo de compra e os testes de
+desempenho (RNF02 a RNF05) dependem dos passos seguintes.
+
+\subsection{Medições}
+
+As miniaturas de capa, de 200 por 300 pixels em JPEG, mediram de 1,6~KB (capa
+de cor lisa) a 19,8~KB (pior caso, imagem de ruído aleatório). Com mil livros,
+o pacote do catálogo fica abaixo de cerca de 20~MB.
+
+\subsection{O que ainda não existe}
+
+Nenhuma parte criptográfica do fluxo de compra foi implementada: o OT, os
+tokens com assinatura cega e a descriptografia ainda não existem. A CDN
+(RF17, RF18) e o programa local (navegação do RF04, RF10 a RF12) também não
+foram iniciados. Os riscos assumidos na escolha da biblioteca de OT
+(compilação no Windows e reprodutibilidade do receptor a partir da semente)
+serão verificados por testes no passo 6.
+
 \section{Questões em aberto}
 
 \begin{itemize}

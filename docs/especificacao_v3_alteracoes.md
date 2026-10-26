@@ -278,3 +278,9 @@ Já aplicada no fonte LaTeX e no PDF da v3.
 |---|---|
 | RF04 | Acrescenta que a única página pública do sistema web é a de apresentação e download, igual para todos. |
 | 5.1 | Item "Sistema web": a página pública não usa cookies, scripts nem recursos de terceiros e exibe versão, SHA-256 e chave pública do catálogo atual. |
+
+## Revisão de 2026-10-26: estado da implementação
+
+| Seção | Mudança |
+|---|---|
+| 5.3 (nova) | "Estado da implementação": tabela dos passos 0–10 com requisitos e situação; o que os passos concluídos entregam; os 29 testes automatizados por grupo; medições das miniaturas; o que ainda não existe. "Questões em aberto" passa a ser 5.4. |
