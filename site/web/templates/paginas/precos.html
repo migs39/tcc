@@ -1,0 +1,31 @@
+{{define "titulo"}}Faixas de preço{{end}}
+{{define "conteudo"}}
+<h1>Faixas de preço</h1>
+<p class="nota">RF03: todo livro tem um preço deste conjunto. Cada faixa ativa forma um grupo de mesmo preço para a compra privada. O valor de uma faixa não muda depois de criada.</p>
+
+<form method="post" action="/admin/precos" class="cartao">
+  <h2>Nova faixa</h2>
+  <label>Valor (R$) <input type="text" name="valor" value="{{.Valor}}" placeholder="29,90" required inputmode="decimal"></label>
+  <button type="submit">Criar</button>
+</form>
+
+{{if .Faixas}}
+<table>
+  <thead><tr><th>Preço</th><th>Livros no catálogo</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  {{range .Faixas}}
+    <tr{{if not .Ativa}} class="inativo"{{end}}>
+      <td>{{preco .ValorCentavos}}</td>
+      <td>{{.LivrosAtivos}}</td>
+      <td>{{if .Ativa}}Ativa{{else}}Inativa{{end}}</td>
+      <td>
+        <form method="post" action="/admin/precos/{{.ID}}/{{if .Ativa}}desativar{{else}}reativar{{end}}">
+          <button class="link">{{if .Ativa}}Desativar{{else}}Reativar{{end}}</button>
+        </form>
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}
+{{end}}

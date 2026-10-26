@@ -1,0 +1,64 @@
+{{define "titulo"}}{{if .Livro.ID}}Editar livro{{else}}Novo livro{{end}}{{end}}
+{{define "conteudo"}}
+{{$l := .Livro}}
+<h1>{{if $l.ID}}{{$l.Titulo}}{{else}}Novo livro{{end}}</h1>
+{{if $l.ID}}<p>Situação: <strong>{{if $l.Ativo}}no catálogo{{else}}removido do catálogo{{end}}</strong></p>{{end}}
+
+<form method="post" action="/admin/livros{{if $l.ID}}/{{$l.ID}}{{end}}" class="cartao largo">
+  <h2>Dados</h2>
+  <label>Título <input type="text" name="titulo" value="{{$l.Titulo}}" required></label>
+  <label>Autor <input type="text" name="autor" value="{{$l.Autor}}" required></label>
+  <label>Categoria
+    <select name="categoria_id" required>
+      <option value="">Escolha…</option>
+      {{range .Categorias}}<option value="{{.ID}}"{{if eq .ID $l.CategoriaID}} selected{{end}}>{{.Nome}}</option>{{end}}
+    </select>
+  </label>
+  <label>Preço (RF03: só valores do conjunto)
+    <select name="faixa_id" required>
+      <option value="">Escolha…</option>
+      {{range .Faixas}}{{if or .Ativa (eq .ID $l.FaixaID)}}<option value="{{.ID}}"{{if eq .ID $l.FaixaID}} selected{{end}}>{{preco .ValorCentavos}}{{if not .Ativa}} (inativa){{end}}</option>{{end}}{{end}}
+    </select>
+  </label>
+  <label>Descrição <textarea name="descricao" rows="4">{{$l.Descricao}}</textarea></label>
+  <div class="linha">
+    <label>Ano <input type="number" name="ano" value="{{if $l.Ano}}{{$l.Ano}}{{end}}" min="1"></label>
+    <label>ISBN <input type="text" name="isbn" value="{{$l.ISBN}}" placeholder="978-…"></label>
+  </div>
+  <label>Editora <input type="text" name="editora" value="{{$l.Editora}}"></label>
+  {{if $l.ID}}<p class="nota">Mudar o preço tira o livro de um grupo e o coloca em outro (nova versão de ambos).</p>{{end}}
+  <button type="submit">{{if $l.ID}}Salvar{{else}}Cadastrar{{end}}</button>
+</form>
+
+{{if $l.ID}}
+<form method="post" action="/admin/livros/{{$l.ID}}/capa" enctype="multipart/form-data" class="cartao largo">
+  <h2>Capa</h2>
+  {{if $l.TemCapa}}
+  <div class="capas">
+    <figure><img class="capa" src="/admin/livros/{{$l.ID}}/capa" alt="Capa original de {{$l.Titulo}}"><figcaption>Original</figcaption></figure>
+    <figure><img class="capa" src="/admin/livros/{{$l.ID}}/miniatura" alt="Miniatura de {{$l.Titulo}}"><figcaption>Miniatura do catálogo (200×300)</figcaption></figure>
+  </div>
+  {{else}}<p class="nota">Sem capa.</p>{{end}}
+  <label>Imagem (JPEG, PNG ou WebP, até {{.TamanhoMB}} MB)
+    <input type="file" name="capa" accept="image/jpeg,image/png,image/webp" required>
+  </label>
+  <button type="submit">Enviar capa</button>
+</form>
+{{if $l.TemCapa}}
+<form method="post" action="/admin/livros/{{$l.ID}}/capa/remover" class="cartao largo">
+  <button type="submit" class="perigo">Remover capa</button>
+</form>
+{{end}}
+
+<form method="post" action="/admin/livros/{{$l.ID}}/{{if $l.Ativo}}desativar{{else}}reativar{{end}}" class="cartao largo">
+  <h2>Catálogo</h2>
+  {{if $l.Ativo}}
+  <p class="nota">Remover tira o livro do catálogo e do grupo (nova versão). O registro é mantido para compras já feitas.</p>
+  <button type="submit" class="perigo">Remover do catálogo</button>
+  {{else}}
+  <button type="submit">Devolver ao catálogo</button>
+  {{end}}
+</form>
+{{end}}
+{{template "voltar" "/admin/livros"}}
+{{end}}

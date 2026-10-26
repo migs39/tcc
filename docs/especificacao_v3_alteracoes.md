@@ -246,3 +246,21 @@ auxiliar.
 ## Fora da especificação: correções no PRD
 
 As divergências D1 (gestão de admins) e D2 (UC17 sem RF) são erros do PRD, não da especificação. Estão em `docs/divergencias_docs.md`. O PRD também precisa refletir a D3: objetivo 4 ("sem acesso à internet"), RF10 e o passo 7 do fluxo.
+
+---
+
+## Revisão de 2026-10-26: navegação no programa local (D-006)
+
+Já aplicada no fonte LaTeX e no PDF da v3.
+
+| Seção | Mudança |
+|---|---|
+| RF04 | O catálogo é publicado como pacote completo, igual para todos; busca e navegação acontecem no programa local; sem vitrine pública nem capas avulsas. |
+| RF09 | (i) o sistema web passa a "administração e publicação do catálogo"; (iii) o programa local "permite navegar no catálogo". |
+| 4.3 | O item "Navegação e busca não revelam interesse" passa a descrever o download do pacote completo e a navegação local, sem depender de código servido pelo sistema web. |
+| 4.4 | Sistema web: "administração e publicação do catálogo". Programa local: "baixa o catálogo completo e permite buscar e navegar localmente". |
+| Tabela 1 | UC04: agente "Cliente (Programa Local)". |
+| Figura 1 | Bloco "Navegação": Cliente → Programa Local "Buscar livros"; Programa Local → Sistema Web "Baixar pacote do catálogo"; resposta "Pacote completo (igual para todos)"; "Filtrar localmente" no Programa Local. |
+| 5.1 | Sistema web sem vitrine pública; item novo "Navegação e busca" com as miniaturas de 200×300 JPEG. |
+| 5.2.4 | Linha "Busca": escolhida "pacote completo, navegado no programa local"; descartadas "vitrine no navegador" e "busca no servidor". |
+| 5.3 | Novas questões: formato do pacote do catálogo e da atualização incremental; interface do programa local. |

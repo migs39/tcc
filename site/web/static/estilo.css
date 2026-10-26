@@ -29,3 +29,13 @@ th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--bor
 .aviso { padding: 10px 12px; border-left: 4px solid var(--ok); background: #eef5ef; }
 .erro { padding: 10px 12px; border-left: 4px solid var(--erro); background: #f8ecea; }
 .nota { margin: 0; color: var(--suave); font-size: .9rem; }
+.cartao.largo { max-width: 640px; }
+.linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+select, textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--borda); border-radius: 6px; background: #fff; }
+tr.inativo td { color: var(--suave); }
+form.inline { display: flex; gap: 8px; align-items: center; margin: 0; }
+td form { margin: 0; }
+img.capa { max-width: 160px; border: 1px solid var(--borda); border-radius: 4px; }
+.capas { display: flex; gap: 16px; align-items: flex-start; }
+.capas figure { margin: 0; }
+.capas figcaption { color: var(--suave); font-size: .85rem; }

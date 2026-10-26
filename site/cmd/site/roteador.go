@@ -4,12 +4,14 @@ import (
 	"log/slog"
 	"net/http"
 
-	"tcc/site/internal/admin"
 	"tcc/site/web"
 )
 
+// Modulo é um conjunto de rotas (admin, catálogo, ...).
+type Modulo interface{ Registrar(*http.ServeMux) }
+
 // NovoRoteador monta todas as rotas e as proteções comuns.
-func NovoRoteador(tpl *web.Templates, adm *admin.Handlers, log *slog.Logger) http.Handler {
+func NovoRoteador(tpl *web.Templates, log *slog.Logger, modulos ...Modulo) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(web.Estaticos())))
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +19,9 @@ func NovoRoteador(tpl *web.Templates, adm *admin.Handlers, log *slog.Logger) htt
 			log.Error("renderizando início", "erro", err)
 		}
 	})
-	adm.Registrar(mux)
+	for _, m := range modulos {
+		m.Registrar(mux)
+	}
 
 	// CSRF: rejeita POST vindo de outra origem (Sec-Fetch-Site / Origin).
 	return cabecalhosSeguranca(http.NewCrossOriginProtection().Handler(mux))

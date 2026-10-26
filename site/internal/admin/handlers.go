@@ -57,6 +57,18 @@ func AdminLogado(ctx context.Context) *Admin {
 	return a
 }
 
+// Exigir protege rotas de outros pacotes da área administrativa (RF01).
+func (h *Handlers) Exigir(prox http.HandlerFunc) http.HandlerFunc { return h.exigir(prox) }
+
+// Base devolve os dados comuns do layout para uma página administrativa.
+func Base(r *http.Request, aviso string) web.Base {
+	b := web.Base{Aviso: aviso}
+	if a := AdminLogado(r.Context()); a != nil {
+		b.Admin = a
+	}
+	return b
+}
+
 // exigir só deixa passar requisições com sessão válida de admin ativo.
 func (h *Handlers) exigir(prox http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -111,11 +123,7 @@ func (h *Handlers) render(w http.ResponseWriter, status int, pagina string, dado
 }
 
 func base(r *http.Request) web.Base {
-	b := web.Base{Aviso: avisos[r.URL.Query().Get("aviso")]}
-	if a := AdminLogado(r.Context()); a != nil {
-		b.Admin = a
-	}
-	return b
+	return Base(r, avisos[r.URL.Query().Get("aviso")])
 }
 
 // --- login -----------------------------------------------------------------

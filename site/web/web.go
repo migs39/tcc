@@ -5,6 +5,7 @@ package web
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -37,6 +38,18 @@ type Templates struct {
 	paginas map[string]*template.Template
 }
 
+// FormatarCentavos escreve 2990 como "R$ 29,90".
+func FormatarCentavos(c int) string {
+	return fmt.Sprintf("R$ %d,%02d", c/100, c%100)
+}
+
+var funcoes = template.FuncMap{
+	"preco": FormatarCentavos,
+	// centavos mostra o valor sem "R$" para preencher campos de formulário.
+	"centavos": func(c int) string { return fmt.Sprintf("%d,%02d", c/100, c%100) },
+}
+
+// Carregar monta cada página com o layout e os parciais compartilhados.
 func Carregar() (*Templates, error) {
 	nomes, err := fs.Glob(arquivos, "templates/paginas/*.html")
 	if err != nil {
@@ -45,7 +58,8 @@ func Carregar() (*Templates, error) {
 	t := &Templates{paginas: map[string]*template.Template{}}
 	for _, arq := range nomes {
 		nome := strings.TrimSuffix(path.Base(arq), ".html")
-		tpl, err := template.ParseFS(arquivos, "templates/layout.html", arq)
+		tpl, err := template.New(path.Base(arq)).Funcs(funcoes).
+			ParseFS(arquivos, "templates/layout.html", "templates/parciais/*.html", arq)
 		if err != nil {
 			return nil, err
 		}

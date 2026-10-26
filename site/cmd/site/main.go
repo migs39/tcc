@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"tcc/site/internal/admin"
+	"tcc/site/internal/catalogo"
 	"tcc/site/internal/db"
 	"tcc/site/web"
 )
@@ -54,10 +55,11 @@ func rodar(log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	hAdmin := admin.NovosHandlers(svcAdmin, tpl, log)
 
 	srv := &http.Server{
 		Addr:              getenv("ENDERECO", "localhost:8080"),
-		Handler:           NovoRoteador(tpl, admin.NovosHandlers(svcAdmin, tpl, log), log),
+		Handler:           NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(catalogo.NovoServico(pool), hAdmin, tpl, log)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

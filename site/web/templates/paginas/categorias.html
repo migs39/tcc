@@ -1,0 +1,34 @@
+{{define "titulo"}}Categorias{{end}}
+{{define "conteudo"}}
+<h1>Categorias</h1>
+
+<form method="post" action="/admin/categorias" class="cartao">
+  <h2>Nova categoria</h2>
+  <label>Nome <input type="text" name="nome" value="{{.Nome}}" required></label>
+  <button type="submit">Criar</button>
+</form>
+
+{{if .Categorias}}
+<table>
+  <thead><tr><th>Nome</th><th>Livros</th><th></th></tr></thead>
+  <tbody>
+  {{range .Categorias}}
+    <tr>
+      <td>
+        <form method="post" action="/admin/categorias/{{.ID}}" class="inline">
+          <input type="text" name="nome" value="{{.Nome}}" required aria-label="Nome da categoria">
+          <button class="link">Renomear</button>
+        </form>
+      </td>
+      <td>{{.Livros}}</td>
+      <td>
+        {{if eq .Livros 0}}
+        <form method="post" action="/admin/categorias/{{.ID}}/remover"><button class="link">Remover</button></form>
+        {{end}}
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}
+{{end}}

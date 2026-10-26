@@ -12,6 +12,9 @@
   <a class="marca" href="/">Livraria</a>
   {{with .Admin}}
   <nav>
+    <a href="/admin/livros">Livros</a>
+    <a href="/admin/precos">Preços</a>
+    <a href="/admin/categorias">Categorias</a>
     <a href="/admin/">Administradores</a>
     <span class="quem">{{.Nome}}</span>
     <form method="post" action="/admin/sair"><button class="link">Sair</button></form>

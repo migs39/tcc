@@ -18,9 +18,9 @@ Produto: protótipo de livraria digital em que a loja recebe o pagamento, mas **
 
 | Componente | Responsabilidade | Requisitos |
 |---|---|---|
-| **Site (sistema web)** | Catálogo, admin, preços discretos, gateway de pagamento, lado *sender* do OT, assinatura cega de tokens. Compra sem conta, só com e-mail. | RF01–RF08, RF13–RF16 |
+| **Site (sistema web)** | Administração e publicação do catálogo (pacote completo, igual para todos; D-006), preços discretos, gateway de pagamento, lado *sender* do OT, assinatura cega de tokens. Compra sem conta, só com e-mail. Sem vitrine pública. | RF01–RF03, RF05–RF08, RF13–RF16 |
 | **CDN** | Guarda livros cifrados; entrega 1 livro por token cego válido e não usado; reporta ao site só tokens usados e quantidade. | RF17, RF18 |
-| **Programa local (cliente)** | Gera a requisição de OT, guarda o segredo, extrai as chaves e descriptografa. Pode usar rede, **só** para falar com o site e a CDN (D-004). Não é código servido pelo site. | RF10–RF12 (RF10 alterado por D-004) |
+| **Programa local (cliente)** | Baixa o pacote do catálogo inteiro e faz a navegação e a busca localmente (D-006). Gera a requisição de OT, guarda o segredo, extrai as chaves e descriptografa. Pode usar rede, **só** para falar com o site e a CDN (D-004). Não é código servido pelo site. | RF04, RF10–RF12 (RF10 alterado por D-004) |
 | Gateway (externo) | Cobra pelo grupo e pela quantidade N. | RF13 |
 
 ### Fluxo de compra (7 passos, PRD)
@@ -119,7 +119,7 @@ Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa
 - **Linguagem:** Go. Motivo: RSA cego RFC 9474 pronto no `cloudflare/circl` (RF16), biblioteca padrão com HTTP, templates e criptografia, desempenho para RNF05, e binário único (a mesma linguagem serve para a CDN e para a parte não-C++ do programa local).
 - **Banco:** PostgreSQL. Motivo: realista para o teste de carga (RNF05) e com constraints (FK) para impor RF03 no próprio banco.
 - **Front:** HTML renderizado no servidor (templates Go), sem SPA e sem JS/fontes/analytics de terceiros. Motivo: menos superfície e nenhum terceiro vendo a navegação.
-- **Busca (RF04):** o site entrega o **catálogo inteiro** num único pacote, igual para todos; o filtro roda no navegador. Motivo: o site não vê o que o cliente procura (lacuna L1). Garantia de engenharia, não formal.
+- **Busca (RF04):** o site entrega o **catálogo inteiro** num único pacote, igual para todos; ~~o filtro roda no navegador~~ o filtro roda no programa local (D-006). Motivo: o site não vê o que o cliente procura (lacuna L1). Garantia de engenharia, não formal.
 - **Integração com o libOTe (D-002):** **binário C++ auxiliar** chamado pelo site (e pelo programa local), e não ligação direta via cgo. Motivo: isola o código C++ e deixa o site independente da forma como o libOTe é compilado.
 - **Em aberto:** gateway de pagamento (RF13), a decidir antes do passo 4.
 - **Complementos aprovados (2026-09-27):** um módulo Go por componente (`site/`, depois `cdn/` e o programa local); rotas com `net/http` da biblioteca padrão; driver `jackc/pgx` v5; migrações com `goose`; senhas com argon2id (`golang.org/x/crypto/argon2`); sessão de admin própria (token aleatório em cookie `HttpOnly`/`Secure`/`SameSite=Strict`, só o hash no banco); testes com `testing` contra Postgres real; Postgres de desenvolvimento via Docker Compose; identificadores e mensagens em português, citando requisitos em comentários e testes.
@@ -130,6 +130,20 @@ Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa
 - **Alternativas descartadas:** (B) receptor no navegador com código servido pelo site: o invariante 1 viraria premissa ("site serve código honesto"), exigiria libOTe em WebAssembly e a semente ficaria em armazenamento do navegador; (C) extensão/página estática de outra origem: mesmos problemas técnicos da B, premissa mais fraca, mas ainda premissa.
 - **Diverge da especificação:** RF10 ("não se conecta à internet") e a descrição do RF09 ("executável local offline"). Registrado em `docs/divergencias_docs.md` (D3); a especificação e o PRD precisam ser atualizados.
 - **Consequências:** o programa não faz telemetria, checagem de atualização nem fala com terceiros; chaves de livro e semente nunca saem da máquina. Canais laterais novos a tratar: o momento em que o programa baixa da CDN logo após a compra (timing, relevante para RF18/lotes) e o IP visto pela CDN (coberto pela premissa de não conivência, invariante 5). D-001 continua valendo (a semente protege contra falha entre pagamento e entrega). Como o pagamento no gateway se encaixa (programa abre o navegador ou paga por ele) fica para o passo 4.
+
+**D-005 — Modelo do catálogo (2026-10-26)**
+- **Livro (RF02):** título, autor, categoria, descrição, ano, ISBN (opcional, dígito verificador conferido), editora e capa. "Remover" = desativar: o registro fica porque versões antigas de grupo o referenciam.
+- **Preços (RF03):** tabela `faixas_preco` editável pelo admin; valor em centavos, **imutável** depois de criado (só ativar/desativar); faixa com livro ativo não pode ser desativada. O banco impõe por FK que todo livro está numa faixa.
+- **Categorias:** lista controlada (tabela), removível só sem livros.
+- **Capas:** no Postgres (bytea), até 2 MB, JPEG/PNG/WebP com tipo conferido pelo conteúdo. ~~Servidas em `/capas/{id}`~~ Desde D-006: a original só na área admin; para o pacote do catálogo, miniatura gerada no upload.
+- **Grupos (RF07, L2):** grupo = livros ativos de uma faixa. Nova versão imutável **só quando a composição muda** (cadastro, remoção, reativação, troca de preço); editar título etc. não versiona. Índice do OT = posição na versão, ordenada por id do livro.
+
+**D-006 — Navegação e busca no programa local (2026-10-26)**
+- **Decisão:** o catálogo é navegado e pesquisado **no programa local**, não no navegador. O site publica um **pacote do catálogo** completo e igual para todos (metadados, versões dos grupos, miniaturas); o programa baixa o pacote inteiro e filtra localmente (RF04). O site **não tem vitrine pública** nem rota pública de capa avulsa (opção 1-a).
+- **Miniaturas:** geradas no upload da capa, 200×300 px, JPEG qualidade 80, capa encaixada num quadro branco com proporção preservada; a reencodificação descarta metadados da imagem. Dependência nova: `golang.org/x/image` (decodificar WebP e redimensionar).
+- **Justificativa:** o site só observa "alguém baixou o catálogo inteiro". Diferente da vitrine no navegador, a privacidade da navegação não depende de o site servir JavaScript honesto (mesmo raciocínio da D-004). Busca local atende RNF02 com folga, e o pacote já leva as versões de grupo que o programa usa para montar a requisição do OT. Continua sendo **escolha de engenharia**, não garantia formal.
+- **Substitui** o "filtro no navegador" da D-003. O passo 3 do plano passa a ser "pacote do catálogo".
+- **Em aberto:** formato do pacote e da atualização incremental (entra em "formato dos artefatos"); interface do programa local.
 ## Escopo do MVP e ordem de implementação
 
 MVP = compra privada ponta a ponta de um grupo de livros (todos os RFs essenciais). RF04 completo e RF15 podem vir depois.
@@ -154,8 +168,8 @@ TCC/
     cmd/site/              servidor web + roteador
     cmd/admin-seed/        cria o primeiro admin (RF01)
     internal/admin/        contas, login, sessão (RF01)
-    internal/catalogo/     livros, preços, grupos (RF02, RF03) (a criar)
-    internal/vitrine/      páginas públicas (RF04)             (a criar)
+    internal/catalogo/     livros, preços, categorias, capas, grupos versionados (RF02, RF03, RF07)
+    internal/pacote/       pacote do catálogo para o programa local (RF04, D-006) (a criar)
     internal/db/           conexão e migrações (dbteste/: bancos de teste)
     web/                   templates/, static/ e renderização
     migrations/            SQL no formato goose

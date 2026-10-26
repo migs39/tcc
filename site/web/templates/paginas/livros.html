@@ -1,0 +1,27 @@
+{{define "titulo"}}Livros{{end}}
+{{define "conteudo"}}
+<div class="cabecalho">
+  <h1>Livros</h1>
+  <a class="botao" href="/admin/livros/novo">Novo livro</a>
+</div>
+{{if .Livros}}
+<table>
+  <thead><tr><th>Título</th><th>Autor</th><th>Categoria</th><th>Preço</th><th>Capa</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  {{range .Livros}}
+    <tr{{if not .Ativo}} class="inativo"{{end}}>
+      <td>{{.Titulo}}</td>
+      <td>{{.Autor}}</td>
+      <td>{{.Categoria}}</td>
+      <td>{{preco .PrecoCentavos}}</td>
+      <td>{{if .TemCapa}}sim{{else}}—{{end}}</td>
+      <td>{{if .Ativo}}No catálogo{{else}}Removido{{end}}</td>
+      <td><a href="/admin/livros/{{.ID}}">Editar</a></td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="nota">Nenhum livro cadastrado. Cadastre antes as <a href="/admin/precos">faixas de preço</a> e as <a href="/admin/categorias">categorias</a>.</p>
+{{end}}
+{{end}}

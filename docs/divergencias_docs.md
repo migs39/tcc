@@ -32,7 +32,7 @@ Legenda de status: `aberto` (falta corrigir o documento ou decidir) · `resolvid
 
 ## 2. Lacunas (nenhum dos dois documentos cobre)
 
-### L1 — Busca e navegação vazam interesse do cliente (RF04 × objetivo 1 do PRD) — `resolvido (D-003; especificação v3, RF04 e 4.3)`
+### L1 — Busca e navegação vazam interesse do cliente (RF04 × objetivo 1 do PRD) — `resolvido (D-003, revisto por D-006: navegação no programa local; especificação v3, RF04 e 4.3)`
 - O objetivo 1 do PRD diz que o site não pode identificar o que o comprador "adquiriu **ou acessou**".
 - A busca no servidor (RF04) e as páginas de detalhe por livro mostram ao site o que cada visitante consultou. Na compra, o site recebe o e-mail. Por sessão, IP ou tempo, ele pode ligar interesse a pessoa.
 - O OT não cobre esse canal. Qualquer proteção aqui é **escolha de engenharia**, não garantia formal.

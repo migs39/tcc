@@ -545,9 +545,11 @@ a precificação de cada livro dentro de um conjunto de preços pré-definidos.
 
 \item \textbf{RF04 --- Busca e navegação no catálogo:} o sistema deve permitir
 que clientes pesquisem livros por critérios como título, autor, categoria e
-preço. O catálogo é entregue por inteiro, na mesma forma para todos os
-clientes, e a filtragem é feita no próprio cliente, de modo que o servidor não
-observe os critérios de busca nem os livros consultados.
+preço. O catálogo é publicado pelo sistema web como um pacote completo, na
+mesma forma para todos os clientes, e a busca e a navegação são feitas no
+programa local, de modo que o servidor não observe os critérios de busca nem
+os livros consultados. O sistema web não oferece vitrine pública nem imagens
+de capa avulsas.
 
 \item \textbf{RF05 --- Compra sem cadastro de cliente:} o sistema deve
 permitir compra sem criação de conta de cliente.
@@ -570,12 +572,13 @@ livros escolhidos sejam extraídas em ambiente local. O servidor não conhece as
 chaves finais obtidas pelo cliente.
 
 \item \textbf{RF09 --- Arquitetura com três componentes:} a solução deve ser
-composta por (i) um sistema web para catálogo, administração, pagamento,
-execução do OT e assinatura cega de tokens; (ii) uma CDN, que armazena os
-livros cifrados e os entrega mediante token válido; e (iii) um programa local,
-instalado no computador do cliente e não fornecido pelo sistema web em tempo
-de execução, que guarda o estado secreto do cliente, comunica-se apenas com o
-sistema web e com a CDN e descriptografa os livros.
+composta por (i) um sistema web para administração e publicação do catálogo,
+pagamento, execução do OT e assinatura cega de tokens; (ii) uma CDN, que
+armazena os livros cifrados e os entrega mediante token válido; e (iii) um
+programa local, instalado no computador do cliente e não fornecido pelo
+sistema web em tempo de execução, que permite navegar no catálogo, guarda o
+estado secreto do cliente, comunica-se apenas com o sistema web e com a CDN e
+descriptografa os livros.
 
 \item \textbf{RF10 --- Descriptografia local:} o cliente deve conseguir
 descriptografar o item resgatado por meio do programa local, a partir do livro
@@ -687,10 +690,14 @@ entregue pelo sistema web durante a compra. Assim, a privacidade da escolha
 (RF07) decorre do protocolo de OT e não depende de o servidor fornecer código
 honesto.
 
-\item \textbf{Navegação e busca não revelam interesse.} O catálogo é entregue
-por inteiro e filtrado no cliente (RF04). Trata-se de uma medida de
-engenharia, não de uma garantia do protocolo; complementam-na a ausência de
-registros de navegação e de scripts ou recursos de terceiros no sistema web.
+\item \textbf{Navegação e busca não revelam interesse.} O programa local
+baixa o catálogo inteiro, com miniaturas de capa de tamanho fixo, e faz a
+busca e a navegação localmente (RF04); o sistema web observa apenas que o
+pacote completo foi baixado. Como o código de navegação não é fornecido pelo
+sistema web, a proteção não depende de o servidor entregar código honesto.
+Trata-se de uma medida de engenharia, não de uma garantia do protocolo;
+complementam-na a ausência de vitrine pública, de imagens avulsas e de
+registros de acesso no sistema web.
 
 \item \textbf{O programa local fala apenas com o sistema web e com a CDN.} A
 chave final e a semente nunca deixam o computador do cliente (RF10, RF11). O
@@ -710,17 +717,18 @@ de chaves de livros criptografados, que são distribuídos por uma CDN. A
 solução é composta por três componentes:
 
 \begin{enumerate}
-\item \textbf{Sistema web (site):} catálogo, administração, preços discretos,
-pagamento via gateway, execução do OT e assinatura cega de tokens. A compra
-não exige conta; apenas o e-mail é solicitado.
+\item \textbf{Sistema web (site):} administração e publicação do catálogo,
+preços discretos, pagamento via gateway, execução do OT e assinatura cega de
+tokens. A compra não exige conta; apenas o e-mail é solicitado.
 
 \item \textbf{CDN:} armazena os livros cifrados e entrega um livro mediante um
 token com assinatura cega válido. Posteriormente, reporta ao site os tokens
 utilizados para ser remunerada.
 
-\item \textbf{Programa local:} instalado no computador do cliente, gera a
-requisição de OT e guarda seu segredo, comunica-se com o sistema web e com a
-CDN, remove o cegamento dos tokens e descriptografa os livros localmente.
+\item \textbf{Programa local:} instalado no computador do cliente, baixa o
+catálogo completo e permite buscar e navegar localmente, gera a requisição de
+OT e guarda seu segredo, comunica-se com o sistema web e com a CDN, remove o
+cegamento dos tokens e descriptografa os livros localmente.
 \end{enumerate}
 
 No fluxo de compra, o cliente escolhe um grupo de livros de mesmo preço e
@@ -759,7 +767,7 @@ escolhidos.
 UC01 & Administrador & Gerenciar conta de administrador (cadastro, login e edição) \\
 UC02 & Administrador & Gerenciar catálogo de livros (cadastrar, editar, consultar e remover) \\
 UC03 & Administrador & Definir política de preços discretos para os livros \\
-UC04 & Cliente & Buscar e navegar no catálogo de livros \\
+UC04 & Cliente (Programa Local) & Buscar e navegar no catálogo de livros \\
 UC05 & Cliente & Realizar compra sem necessidade de cadastro \\
 UC06 & Cliente & Informar e-mail válido para recebimento da resposta do OT \\
 UC07 & Cliente & Realizar compra privada de N itens utilizando protocolo \emph{oblivious transfer} \\
@@ -790,7 +798,7 @@ interrompida após o pagamento.
 \centering
 \caption{Diagrama de sequência: administração, navegação e compra}\label{fig:seq-compra}
 \begin{tikzpicture}
-  \sdlifelines{-14.2}
+  \sdlifelines{-14.6}
   \sdheads
 
   \sdbanner{-1.0}{Administração}
@@ -798,26 +806,27 @@ interrompida após o pagamento.
   \sdcall{\xAdm}{\xWeb}{-2.2}{Definir preços discretos}
 
   \sdbanner{-2.9}{Navegação}
-  \sdcall{\xCli}{\xWeb}{-3.5}{Solicitar catálogo}
-  \sdreply{\xWeb}{\xCli}{-4.1}{Catálogo completo (igual para todos)}
-  \sdselfR{\xCli}{-4.4}{Filtrar localmente}
+  \sdcall{\xCli}{\xPrg}{-3.6}{Buscar livros}
+  \sdcall{\xPrg}{\xWeb}{-4.15}{Baixar pacote do catálogo}
+  \sdreply{\xWeb}{\xPrg}{-4.7}{Pacote completo (igual para todos)}
+  \sdselfL{\xPrg}{-4.95}{Filtrar localmente}
 
-  \sdbanner{-5.4}{Compra}
-  \sdcall{\xCli}{\xPrg}{-6.0}{Escolher grupo (versão) e N livros do grupo}
-  \sdselfL{\xPrg}{-6.4}{Gerar semente, requisição OT e N valores\\cegados; guardar semente e escolhas}
-  \sdcall{\xPrg}{\xWeb}{-7.45}{E-mail + requisição OT + N valores cegados}
-  \sdcall{\xWeb}{\xGat}{-8.0}{Processar pagamento (grupo $\times$ N)}
-  \sdreply{\xGat}{\xWeb}{-8.55}{Status da transação}
+  \sdbanner{-5.75}{Compra}
+  \sdcall{\xCli}{\xPrg}{-6.35}{Escolher grupo (versão) e N livros do grupo}
+  \sdselfL{\xPrg}{-6.75}{Gerar semente, requisição OT e N valores\\cegados; guardar semente e escolhas}
+  \sdcall{\xPrg}{\xWeb}{-7.8}{E-mail + requisição OT + N valores cegados}
+  \sdcall{\xWeb}{\xGat}{-8.35}{Processar pagamento (grupo $\times$ N)}
+  \sdreply{\xGat}{\xWeb}{-8.9}{Status da transação}
 
-  \sdframe{-0.8}{-8.9}{13.3}{-13.9}{alt}{Pagamento aprovado}
-  \sdselfR{\xWeb}{-9.5}{Calcular resposta do OT (sem saber a escolha)}
-  \sdselfR{\xWeb}{-10.1}{Assinar às cegas os N valores}
-  \sdreply{\xWeb}{\xPrg}{-10.9}{Resposta do OT + N assinaturas cegas}
-  \sdcall{\xWeb}{\xCli}{-11.4}{Enviar resposta do OT (e-mail)}
-  \sdselfR{\xWeb}{-11.8}{Persistir resposta do OT para reenvio}
-  \sdselfL{\xPrg}{-12.4}{Remover cegamento: N tokens}
-  \sdelse{-0.8}{13.3}{-12.95}{Pagamento recusado}
-  \sdreply{\xWeb}{\xPrg}{-13.55}{Informar falha}
+  \sdframe{-0.8}{-9.25}{13.3}{-14.25}{alt}{Pagamento aprovado}
+  \sdselfR{\xWeb}{-9.85}{Calcular resposta do OT (sem saber a escolha)}
+  \sdselfR{\xWeb}{-10.45}{Assinar às cegas os N valores}
+  \sdreply{\xWeb}{\xPrg}{-11.25}{Resposta do OT + N assinaturas cegas}
+  \sdcall{\xWeb}{\xCli}{-11.75}{Enviar resposta do OT (e-mail)}
+  \sdselfR{\xWeb}{-12.15}{Persistir resposta do OT para reenvio}
+  \sdselfL{\xPrg}{-12.75}{Remover cegamento: N tokens}
+  \sdelse{-0.8}{13.3}{-13.3}{Pagamento recusado}
+  \sdreply{\xWeb}{\xPrg}{-13.9}{Informar falha}
 \end{tikzpicture}
 \end{figure}
 
@@ -876,10 +885,15 @@ RF14).
 do cliente e a reprodutibilidade do receptor a partir da semente são
 verificadas por testes automatizados durante a implementação.
 
-\item \textbf{Sistema web:} linguagem Go, banco PostgreSQL, páginas
-renderizadas no servidor, sem recursos de terceiros; catálogo entregue por
-inteiro e filtrado no cliente; biblioteca de OT acessada por um binário
-auxiliar.
+\item \textbf{Sistema web:} linguagem Go, banco PostgreSQL, páginas de
+administração renderizadas no servidor, sem recursos de terceiros; catálogo
+publicado como pacote completo, sem vitrine pública; biblioteca de OT acessada
+por um binário auxiliar.
+
+\item \textbf{Navegação e busca:} no programa local, sobre o pacote completo
+do catálogo. As capas seguem no pacote como miniaturas de 200 por 300 pixels em
+JPEG, geradas no envio da capa, para que o tamanho do pacote não dependa das
+imagens originais.
 
 \item \textbf{Assinatura cega:} RSA cego padronizado \cite{rfc9474}.
 
@@ -1084,10 +1098,12 @@ Interface & HTML gerado no servidor & Aplicação de página única (SPA) &
 Menor superfície de ataque e nenhuma dependência de código de terceiros no
 navegador. \\
 \addlinespace
-Busca (RF04) & Catálogo inteiro, filtrado no cliente & Busca no servidor sem
-registros &
-Na busca no servidor, o sistema web observa as consultas; a proteção
-dependeria apenas de disciplina operacional. \\
+Busca (RF04) & Pacote completo, navegado no programa local & Vitrine no
+navegador com filtro local; busca no servidor sem registros &
+Na vitrine no navegador, o filtro é código fornecido pelo sistema web, e a
+proteção dependeria de ele ser honesto; na busca no servidor, o sistema web
+observa as consultas e a proteção dependeria apenas de disciplina
+operacional. \\
 \addlinespace
 Acesso à biblioteca de OT & Binário auxiliar & Ligação direta ao código C++ &
 Isola o código C++ e desacopla a compilação da biblioteca da compilação do
@@ -1112,6 +1128,9 @@ anonimato dos tokens.
 \item Prazo de reenvio da resposta do OT (RF15).
 \item Gateway de pagamento e sua integração com o programa local.
 \item Proteção da semente armazenada no programa local.
+\item Formato do pacote do catálogo e de sua atualização incremental.
+\item Interface do programa local, que também passa a ser a vitrine do
+catálogo.
 \end{itemize}
 
 % ---------------------------------------------------------------------------
