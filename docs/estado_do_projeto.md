@@ -1,9 +1,9 @@
 # Estado do projeto — Livraria Digital com OT
 
-Atualizado em: 2026-11-22 (app completo: site, CDN e programa local)
+Atualizado em: 2026-11-23 (app completo e no ar; monografia quase final; apresentação da Atividade 4 pronta)
 
 Documento para o grupo. Resume o que foi decidido, onde está cada parte e o que falta.
-- **Detalhe e justificativa das decisões:** `CLAUDE.md`, seção "Decisões tomadas" (IDs D-001 a D-007).
+- **Detalhe e justificativa das decisões:** `CLAUDE.md`, seção "Decisões tomadas" (IDs D-001 a D-015).
 - **Divergências e lacunas entre PRD e especificação:** `docs/divergencias_docs.md`.
 
 ---
@@ -38,11 +38,11 @@ Se algo falhar entre os passos 3 e 7, o programa reexecuta o receptor com a seme
 |---|---|---|---|
 | D-001 | Execução do OT | Síncrona na compra; a semente do PRNG do receptor fica salva e permite reextrair as chaves a partir da resposta do e-mail | Decidida e implementada; determinismo testado; recuperação pelo e-mail testada ponta a ponta |
 | D-002 | Biblioteca de OT | libOTe (C++, MIT), OT base Masny–Rindal [MR19], via binário C++ auxiliar | Decidida e implementada (`ot-helper/`); compila no Windows (MSVC) e no Linux |
-| D-003 | Stack do site | Go + PostgreSQL + HTML renderizado no servidor; catálogo inteiro com filtro no navegador; libOTe via binário C++ auxiliar | Decidida |
+| D-003 | Stack do site | Go + PostgreSQL + HTML renderizado no servidor; libOTe via binário C++ auxiliar (o filtro no navegador foi substituído pela D-006) | Decidida e implementada |
 | D-003 (compl.) | Ferramentas | Um módulo Go por componente; `net/http` padrão; `pgx` v5; migrações `goose`; argon2id; sessão de admin própria; Postgres via Docker Compose; identificadores em português | Decidida |
 | D-004 | Programa local | Deixa de ser offline; usa rede só com o site e a CDN | Decidida; especificação v3 atualizada, PRD pendente |
 | D-005 | Modelo do catálogo | Livro completo com capa (Postgres, 2 MB); faixas de preço editáveis e imutáveis; categorias controladas; nova versão de grupo só quando a composição muda | Decidida e implementada (passo 2) |
-| D-006 | Navegação e busca | No programa local, sobre o pacote completo do catálogo; site sem vitrine pública; miniaturas 200×300 JPEG | Decidida; miniaturas implementadas, pacote no passo 3 |
+| D-006 | Navegação e busca | No programa local, sobre o pacote completo do catálogo; site sem vitrine pública; miniaturas 200×300 JPEG | Decidida e implementada |
 | D-007 | Formato do pacote | ZIP único determinístico (JSON + miniaturas), pacote completo com ETag, assinatura Ed25519 + hash público, versão só cresce | Decidida e implementada (passo 3) |
 | D-008 | Variante de OT | 1-de-n de Naor–Pinkas repetido N vezes, sobre os OTs 1-de-2 do MR19 | Decidida e implementada |
 | D-009 | Simétrico | AES-256-GCM, chave por livro, ID do livro como dado associado | Decidida e implementada |
@@ -50,6 +50,8 @@ Se algo falhar entre os passos 3 e 7, o programa reexecuta o receptor com a seme
 | D-011 | Tokens e reporte | Uso único; RSA-3072 RFC 9474 com uma chave por faixa, publicada no pacote assinado; reporte em lotes de 50 ou diário, embaralhado | Decidida e implementada |
 | D-012 | Formatos e programa local | JSON + base64; o e-mail leva a resposta do OT e as assinaturas cegas; CLI em Go; semente em arquivo só do usuário | Decidida e implementada |
 | D-013 | Código comum | Módulo `protocolo/` usado pelo site, pela CDN e pelo programa local; toda a aleatoriedade do cliente vem da semente | Decidida e implementada |
+| D-014 | Pontos que restavam | Tarifa fixa por token; semente sem senha; comportamento uniforme contra falha seletiva; gateway mock e SMTP opcional; janela WebView2 | Decidida e implementada; e-mail real pela conta dedicada da livraria |
+| D-015 | Acesso externo e distribuição | Tailscale Funnel (TLS termina na nossa máquina); endereços embutidos no build; programa pelo Release do GitHub, com SHA-256 na página; segredo da CDN aleatório | Decidida e implementada; no ar em `jimpas.tail090513.ts.net`, Release `v1.0-demo` |
 
 **Descartados, com motivo registrado no CLAUDE.md:**
 - emp-ot (não suporta Windows);
@@ -65,6 +67,12 @@ Se algo falhar entre os passos 3 e 7, o programa reexecuta o receptor com a seme
 Nenhuma. Os pontos que restavam foram decididos na D-014 (2026-11-22): remuneração por tarifa fixa por token, semente sem senha, comportamento uniforme contra falha seletiva, gateway mock com SMTP opcional, sem atraso no download e janela WebView2. O tema visual foi escolhido em 2026-11-23: estilo 2, "Cofre criptográfico".
 
 Pendência de implementação: integração com um gateway de pagamento real, que exige conta de lojista.
+
+**Entregas do cronograma (PCS 3860):**
+- Atividade 4 (monografia quase final e apresentação): prontas. Monografia em `docs/monografia/main.pdf` (62 páginas); apresentação no artifact de slides, com roteiro em `docs/roteiro_apresentacao_atividade4.md`.
+- 01/12: pôster, press release e link da página do projeto. A fazer.
+- 08/12: monografia final. Falta a ficha catalográfica oficial (biblioteca da Poli) e o "de acordo" do orientador.
+- 09/12: vídeo de demonstração (10 a 15 min). A fazer.
 
 ---
 
@@ -82,7 +90,7 @@ Pendência de implementação: integração com um gateway de pagamento real, qu
 | 7 | Assinatura cega (RSA-3072, RFC 9474, circl) | RF16 | **Concluído**: chave por faixa, a pública vai no pacote assinado (D-011) |
 | 8 | Recebimento e validação do reporte da CDN | RF18, UC17 | **Concluído**: `POST /api/cdn/reporte` com segredo compartilhado; confere assinaturas, recusa repetidos, registra quantidade por lote |
 | 9 | Reenvio da resposta do OT | RF15 | **Concluído**: `POST /api/compras/{id}/reenvio`, 30 dias, só para o e-mail original; resposta igual exista ou não a compra |
-| 10 | Testes de privacidade e carga | RNF02, RNF03, RNF05 | **Parcial**: testes de privacidade do fluxo (tamanhos e registros independentes da escolha; e-mail sem chave; colunas das tabelas) e benchmarks da compra no site, sequencial e concorrente (`BenchmarkCompraConcorrente`): 1.213 compras/min com 4 núcleos, contra 600/min em RNF05 |
+| 10 | Testes de privacidade e carga | RNF02, RNF03, RNF05 | **Concluído**: testes de privacidade do fluxo (tamanhos e registros independentes da escolha; e-mail sem chave; colunas das tabelas) e benchmarks da compra no site, sequencial e concorrente (`BenchmarkCompraConcorrente`): 1.213 compras/min com 4 núcleos, contra 600/min em RNF05 |
 
 **CDN** (`cdn/`, **concluída**): guarda os livros cifrados enviados pelo site, entrega um livro por token válido da faixa do livro e ainda não usado, e reporta em lotes embaralhados, sem horário nem livro (D-011). Lê a faixa de cada livro e as chaves públicas do pacote assinado do catálogo.
 
