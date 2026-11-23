@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"mime"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"os"
 	"path/filepath"
@@ -66,6 +67,20 @@ func (c SMTP) Enviar(m Mensagem) error {
 	b := make([]byte, 8)
 	rand.Read(b)
 	limite := "limite-" + hex.EncodeToString(b)
+	// SMTP_DE pode ser "Nome <endereco>"; o envelope (MAIL FROM) leva só o endereço.
+	envelope := c.De
+	if a, err := mail.ParseAddress(c.De); err == nil {
+		envelope = a.Address
+	}
+	dominio := "localhost"
+	if i := strings.LastIndex(envelope, "@"); i >= 0 {
+		dominio = envelope[i+1:]
+	}
+	// Date e Message-ID: sem eles, provedores como o Gmail tendem a marcar a
+	// mensagem como spam. O Message-ID é aleatório e não liga nada à compra.
+	id := make([]byte, 16)
+	rand.Read(id)
+	fmt.Fprintf(&corpo, "Date: %s\r\nMessage-ID: <%s@%s>\r\n", time.Now().Format(time.RFC1123Z), hex.EncodeToString(id), dominio)
 	fmt.Fprintf(&corpo, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\n", c.De, m.Para, mime.QEncoding.Encode("utf-8", m.Assunto))
 	fmt.Fprintf(&corpo, "Content-Type: multipart/mixed; boundary=%q\r\n\r\n", limite)
 	fmt.Fprintf(&corpo, "--%s\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n%s\r\n", limite, m.Texto)
@@ -80,7 +95,7 @@ func (c SMTP) Enviar(m Mensagem) error {
 	if c.Usuario != "" {
 		auth = smtp.PlainAuth("", c.Usuario, c.Senha, c.Host)
 	}
-	return smtp.SendMail(net.JoinHostPort(c.Host, c.Porta), auth, c.De, []string{m.Para}, []byte(corpo.String()))
+	return smtp.SendMail(net.JoinHostPort(c.Host, c.Porta), auth, envelope, []string{m.Para}, []byte(corpo.String()))
 }
 
 // Fila envia e-mails fora da requisição (RNF04: até 1 min após o pagamento),

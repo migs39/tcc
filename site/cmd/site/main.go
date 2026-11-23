@@ -93,6 +93,9 @@ func rodar(log *slog.Logger) error {
 	if h := os.Getenv("SMTP_HOST"); h != "" {
 		enviador = compra.SMTP{Host: h, Porta: getenv("SMTP_PORTA", "587"), Usuario: os.Getenv("SMTP_USUARIO"),
 			Senha: os.Getenv("SMTP_SENHA"), De: getenv("SMTP_DE", "livraria@localhost")}
+		os.Stderr.WriteString("e-mail: SMTP em " + h + "\n")
+	} else {
+		os.Stderr.WriteString("e-mail: gravado em " + getenv("CAIXA_SAIDA", "caixa_saida") + " (SMTP_HOST vazio)\n")
 	}
 	fila := compra.NovaFila(enviador, log)
 	svcCompra := compra.NovoServico(pool, protocolo.OTHelper{Caminho: os.Getenv("OT_HELPER")}, compra.GatewayMock{}, fila,

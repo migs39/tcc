@@ -209,8 +209,11 @@ func mensagemResposta(para, id string, corpo []byte, reenvio bool) Mensagem {
 		Texto: "Compra " + id + ".\r\n\r\n" +
 			"Em anexo está a resposta do protocolo de transferência inconsciente. Ela não\r\n" +
 			"contém a chave dos livros: só o programa local, com o segredo guardado no seu\r\n" +
-			"computador, consegue extraí-la. Se a compra foi interrompida, use no programa:\r\n" +
-			"  livraria recuperar <arquivo resposta-ot.json>\r\n",
+			"computador, consegue extraí-la.\r\n\r\n" +
+			"Se a compra foi interrompida, salve o anexo e, no mesmo computador da compra:\r\n" +
+			"  - na janela Livraria OT: aba Compras > Recuperar uma compra pelo e-mail;\r\n" +
+			"  - na linha de comando: livraria recuperar <arquivo resposta-ot.json>\r\n\r\n" +
+			"Sem o segredo guardado no computador da compra, este anexo não abre os livros.\r\n",
 		Anexo: corpo,
 	}
 }
