@@ -50,6 +50,15 @@
 </form>
 {{end}}
 
+<form method="post" action="/admin/livros/{{$l.ID}}/arquivo" enctype="multipart/form-data" class="cartao largo">
+  <h2>Arquivo do livro</h2>
+  <p class="nota">O arquivo é cifrado no site com a chave deste livro (AES-256-GCM) e só a versão cifrada vai para a CDN. O arquivo em claro não fica guardado.</p>
+  <label>Arquivo (PDF, EPUB…)
+    <input type="file" name="arquivo" required>
+  </label>
+  <button type="submit">Cifrar e enviar à CDN</button>
+</form>
+
 <form method="post" action="/admin/livros/{{$l.ID}}/{{if $l.Ativo}}desativar{{else}}reativar{{end}}" class="cartao largo">
   <h2>Catálogo</h2>
   {{if $l.Ativo}}

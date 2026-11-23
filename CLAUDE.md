@@ -9,7 +9,7 @@ Produto: protótipo de livraria digital em que a loja recebe o pagamento, mas **
 
 - Seja direto. Sem lição de moral.
 - **Consulte antes de decidir.** Qualquer escolha de arquitetura, stack, biblioteca, formato ou parâmetro que não esteja definida aqui: apresente as opções com trade-offs e espere minha resposta. Não crie estrutura de pastas, dependências ou convenções novas sem eu aprovar.
-- Fontes de verdade: `docs/Especificacao_Detalhada_v3.pdf` (especificação; fonte LaTeX em `docs/especificacao/`, alterações da v2 em `docs/especificacao_v3_alteracoes.md`) e `docs/PRD_Livraria_OT.pdf`. Consulte antes de responder sobre requisitos. Se divergirem, **a especificação vence** e você aponta a divergência.
+- Fontes de verdade: a especificação, hoje mantida como monografia em `docs/monografia/` (LaTeX no modelo TCC-PCS-EPUSP; PDF da v3 em `docs/Especificacao_Detalhada_v3.pdf`; `docs/especificacao/` é o fonte histórico da v3; alterações da v2 em `docs/especificacao_v3_alteracoes.md`) e `docs/PRD_Livraria_OT.pdf`. Consulte antes de responder sobre requisitos. Se divergirem, **a especificação vence** e você aponta a divergência.
 - Cite requisitos pelo ID (RF01–RF18, RNF01–RNF08, UC01–UC20) em código, commits, testes e explicações.
 - Distinga sempre: **garantia formal** (prova/propriedade do protocolo) × **premissa** (ex.: não conivência) × **escolha de engenharia**.
 - **Git:** nunca faça commit ou push sem pedido explícito, com ou sem auto mode. Pedido de commit não autoriza push, e vice-versa. Repositório: https://github.com/migs39/tcc.
@@ -88,14 +88,8 @@ Qualquer código ou proposta que viole um destes está **errado**. Revise contra
 
 Quando um tema tocar em qualquer uma destas, apresente opções com trade-offs e pare:
 
-- Variante de OT: 1-out-of-n repetido, k-out-of-n ou GOT
-- Tamanho mínimo de grupo de mesmo preço
-- Prazo de reenvio (RF15)
-- Token de uso único ou permite novo download do mesmo livro
-- Frequência e lotes do reporte da CDN; remuneração por token
-- Algoritmo simétrico (dentro de RNF01)
-- Stack / linguagens de cada componente
-- Formato dos artefatos: requisição OT, resposta OT, tokens, livro cifrado
+- ~~Variante de OT~~ (D-008) · ~~Tamanho mínimo de grupo~~ (D-010) · ~~Prazo de reenvio~~ (D-010) · ~~Token de uso único~~ (D-011) · ~~Frequência e lotes do reporte~~ (D-011) · ~~Algoritmo simétrico~~ (D-009) · ~~Formato dos artefatos~~ (D-012)
+- Todas as decisões acima foram tomadas (D-008 a D-014). O estilo visual da interface será escolhido entre 5 propostas.
 
 Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa.
 
@@ -114,6 +108,7 @@ Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa
 - **Descartadas:** emp-ot (PVW encaixa melhor, mas não suporta Windows); circl `ot/simot` (só 1-de-2, sender fala primeiro); mpz e swanky (avisam "não usar em produção"). OT via OPRF (RFC 9497) foi descartado por fugir do foco do TCC, que é OT.
 - **Continua em aberto:** a variante de OT (1-de-n repetido via Naor–Pinkas 1999 sobre 1-de-2, k-de-n ou GOT).
 - **Sem spike (decisão do grupo, 2026-09-27):** as verificações viram testes automatizados na implementação (passo 6): build no Windows, reexecução por semente (D-001) e benchmark de N·log₂n OTs contra RNF03/RNF05. **Risco aceito:** se o libOTe não compilar no Windows ou a reexecução não for determinística, isso só aparece no passo 6.
+- **Verificado (2026-11-22):** o libOTe e o `ot-helper` compilam no Windows (MSVC 19.52, Build Tools 2026) e no Linux; a requisição do receptor é idêntica byte a byte com a mesma semente (`protocolo/protocolo_test.go`, `TestRequisicaoDeterministica`). Detalhe do MR19 no libOTe: o sender manda seu ponto antes de ler a requisição, mas a requisição não depende dele, então o fluxo continua sendo uma ida e uma volta.
 
 **D-003 — Stack do site (2026-09-27)**
 - **Linguagem:** Go. Motivo: RSA cego RFC 9474 pronto no `cloudflare/circl` (RF16), biblioteca padrão com HTTP, templates e criptografia, desempenho para RNF05, e binário único (a mesma linguagem serve para a CDN e para a parte não-C++ do programa local).
@@ -154,6 +149,54 @@ Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa
 - **O programa local deve:** verificar a assinatura com a chave embutida, conferir o SHA-256 do corpo e recusar versão menor que a que já tem (contra rollback).
 - **Medido:** miniatura de 1,6 KB (capa lisa) a 19,8 KB (pior caso, ruído); 1.000 livros ficam abaixo de ~20 MB.
 - **Motivo:** um download e uma assinatura; hash público permite detectar catálogo personalizado por cliente, base contra o ataque de falha seletiva no OT (passo 6: incluir compromissos das chaves dos livros no pacote).
+**D-008 — Variante de OT: 1-de-n repetido N vezes, Naor–Pinkas sobre MR19 (2026-11-22)**
+- **Decisão:** para comprar N livros de um grupo com n livros, o OT 1-de-n de Naor e Pinkas (1999) roda N vezes. Cada execução usa ℓ = ⌈log₂ n⌉ OTs 1-de-2 aleatórios do MR19 (libOTe, D-002), todos num único lote (N·ℓ OTs). O site cifra a chave de cada livro i com `SHA-256("livraria-ot/np/v1" ‖ instância ‖ i ‖ K₁^{i₁} ‖ … ‖ K_ℓ^{i_ℓ})` (XOR), e o cliente só consegue abrir a posição cujos bits escolheu.
+- **Justificativa:** é a construção que a especificação cita, o custo é N·log₂ n OTs base, e o libOTe entrega exatamente os OTs 1-de-2 de que ela precisa. O hash como função de derivação é premissa de oráculo aleatório (escolha de engenharia).
+- **Limitação aceita:** nada impede o cliente de escolher o mesmo livro duas vezes; ele só se prejudica. Garantia formal: o site não aprende os índices (privacidade do receptor do MR19); o cliente não aprende chaves fora das escolhidas (privacidade do sender, sob o oráculo aleatório).
+- **Descartadas:** k-de-n (mais código criptográfico próprio, sem implementação pronta) e GOT (mais expressivo do que o MVP precisa).
+
+**D-009 — Algoritmo simétrico: AES-256-GCM (2026-11-22)**
+- Uma chave aleatória de 256 bits por livro, gerada pelo site e guardada só no site. O livro cifrado vai para a CDN como `nonce (12 B) ‖ cifra+tag`, e o ID do livro entra como dado associado. A implementação vem da biblioteca padrão do Go. Atende RNF01 com folga.
+
+**D-010 — Grupo mínimo, reenvio e pagamento (2026-11-22)**
+- **Grupo mínimo:** 5 livros. Uma compra em grupo menor é recusada pelo site.
+- **Reenvio (RF15):** 30 dias após a compra, sempre para o e-mail original.
+- **Gateway (RF13):** mock no site, atrás de uma interface `Gateway`, para trocar por um real depois. O programa local intermedeia o pagamento: os dados de pagamento seguem junto com a requisição do OT. A cobrança é preço da faixa × N (invariante 4).
+
+**D-011 — Tokens e reporte da CDN (2026-11-22)**
+- **Token:** vale para um único download (RF17). A assinatura cega usa RSA-3072 (RFC 9474, variante RSABSSA-SHA384-PSS-Randomized, `cloudflare/circl`), com **uma chave por faixa de preço**. O token revela a faixa à CDN, que já vê o livro. O conjunto de anonimato é o das compras da mesma faixa (L4).
+- **Chave pública no pacote:** a chave pública de cada faixa vai no `catalogo.json` (campo `chave_token` do grupo), coberta pela assinatura Ed25519 da D-007. Assim, todos os clientes e a CDN recebem a mesma chave e o site não consegue dar a um cliente uma chave só dele para reconhecer seus tokens.
+- **Reporte:** a CDN acumula os tokens usados e envia um lote quando chega a 50 tokens ou uma vez por dia, o que vier primeiro. O lote vai embaralhado, sem horários e sem livro, só com os tokens e a quantidade (RF18). O site confere cada assinatura e recusa token repetido.
+
+**D-012 — Formatos e programa local (2026-11-22)**
+- **Artefatos:** JSON com binários em base64. A requisição leva a mensagem do receptor do MR19 e os N valores cegados. A resposta do OT leva a mensagem do sender do MR19 e as N×n cifras de Naor–Pinkas; as N assinaturas cegas vão junto. O e-mail leva a resposta do OT e as assinaturas cegas, para a recuperação após falha (D-001). Nenhum desses dados liga um token à compra, porque as assinaturas cegas são exatamente o que o site já viu.
+- **Programa local:** linha de comando em Go (`programa-local/`). A semente, as escolhas e os fatores de cegamento ficam num arquivo local com permissão só do usuário, sem senha, gravado antes do envio.
+
+**D-013 — Código comum em `protocolo/` (2026-11-22)**
+- **Decisão:** o código que o site, a CDN e o programa local compartilham fica num módulo Go próprio (`tcc/protocolo`), usado pelos três por `replace tcc/protocolo => ../protocolo`. Ele inclui Naor–Pinkas, a chamada ao `ot-helper`, a semente e os fluxos derivados dela, os tokens RFC 9474, o AES-GCM dos livros, os formatos JSON e a leitura do pacote.
+- **Justificativa:** uma única implementação criptográfica, testada uma vez. Copiar o código em cada módulo deixaria três versões que podem divergir.
+- **Consequência:** toda a aleatoriedade do cliente numa compra vem da semente, inclusive as mensagens dos tokens e os fatores de cegamento (via `Semente.Fluxo`). Por isso o programa local refaz tudo a partir da semente e do e-mail (D-001), sem precisar guardar o estado interno da biblioteca de assinatura cega.
+
+**D-014 — Pontos que estavam em aberto (2026-11-22, decididos por Claude a pedido do grupo)**
+- **Remuneração da CDN:** tarifa fixa por token entregue, configurável no site (`TARIFA_TOKEN_CENTAVOS`, padrão R$ 0,50). O site grava o valor de cada lote junto com a quantidade. Como a tarifa não depende do livro, o valor não revela nada além da quantidade.
+- **Semente:** continua num arquivo só legível pelo usuário, sem senha. Quem tem acesso à conta do usuário já tem os livros decifrados na biblioteca, então uma senha protegeria pouco. Ela ainda pioraria a usabilidade (RNF07) e criaria outro jeito de perder o acesso (invariante 6). A recomendação é a cifragem de disco do sistema.
+- **Ataque de falha seletiva:** sem compromissos das chaves no pacote. O AES-GCM já detecta uma chave errada, e o que vazaria a escolha seria uma reação do cliente que o site pudesse ver. Por isso o programa local se comporta igual na rede, abram as chaves ou não: troca todos os tokens e não avisa o site; a falha aparece só na tela do cliente. Isto é escolha de engenharia, não garantia formal.
+- **Gateway e e-mail:** o gateway continua mock, porque um gateway real exige conta de lojista, e fica atrás da interface `Gateway`. O e-mail ganha um envio SMTP opcional (`SMTP_*`); sem essa configuração, continua a pasta de `.eml`.
+- **Momento do download:** sem atraso artificial. Correlacionar o horário da compra (site) com o do download (CDN) exige conivência entre site e CDN, o que a premissa 5 exclui, e o reporte não leva horários. A opção `-adiar` continua disponível.
+- **Interface gráfica:** o programa local ganha uma janela nativa com WebView2 (`github.com/jchv/go-webview2`, Go puro, sem cgo), em `cmd/livraria-janela`. A página fica embutida no executável e tem CSP sem rede (`connect-src 'none'`); tudo passa por funções Go ligadas à página. A janela não abre porta localhost e não roda código vindo do site, mantendo a D-001 e a D-004. Wails foi descartado: traria muito mais dependências para o mesmo resultado. A janela só existe no Windows; nos outros sistemas fica a linha de comando. O site e a CDN continuam com HTML gerado no servidor. A CDN ganha `/painel`, protegido por Basic auth com o `SEGREDO_CDN`, e o site ganha `/admin/cdn`, com os lotes e o valor a pagar.
+- **Tema visual (escolhido pelo grupo, 2026-11-23):** o estilo 2, "Cofre criptográfico", entre 5 propostas. É um tema escuro com a fonte monoespaçada JetBrains Mono, títulos em Space Grotesk e verde `#39d98a` para ação e assinatura válida. Fica em `protocolo/tema` (`tema.css` + fontes OFL servidas localmente) e é usado pelos três componentes.
+
+## Monografia (diretrizes PCS/Poli) — `docs/diretrizes/`
+
+A monografia segue as Diretrizes para Apresentação de Dissertações e Teses da Poli (4ª ed.) e as Recomendações do PCS (2024). Entrega atual: **Projeto de Formatura II** (todos os capítulos).
+- **Modelo:** TCC-PCS-EPUSP (abnTeX2) em `docs/monografia/`: `main.tex` (pré-textuais) + `Cap1-Intro.tex` … `Cap6-Consideracoes.tex`, `referencias.bib`. Não mexer nos arquivos da classe copiados do modelo (`abntex2*.cls/.sty/.bst`, `abntex2-options.bib`).
+- **Sumário recomendado:** 1 Introdução (1.1 Motivação, 1.2 Objetivos, 1.3 Justificativa, 1.4 Organização); 2 Aspectos Conceituais; 3 Método do Trabalho (só as fases; o desenvolvimento delas fica nos capítulos seguintes); 4 Especificação de Requisitos; 5 Desenvolvimento do Trabalho (5.1 Tecnologias Utilizadas, 5.2 Projeto e Implementação, 5.3 Testes e Avaliação); 6 Considerações Finais (6.1 Conclusões, 6.2 Contribuições, 6.3 Perspectivas de Continuidade); Referências; Apêndices/Anexos.
+- **Pré-textuais obrigatórios:** capa, folha de rosto, ficha catalográfica (verso da folha de rosto; a oficial vem do site da biblioteca da Poli), resumo + palavras-chave e abstract + keywords (parágrafo único, até 500 palavras, 3ª pessoa, voz ativa).
+- **Citações:** sistema autor-data (`abntex2cite [alf]`): `\cite{}` para (AUTOR, ano), `\citeonline{}` para Autor (ano). Todo trabalho consultado é citado no texto e listado nas Referências. Evitar citação direta; escrever com as próprias palavras. Documento online leva `url` + `urlaccessdate`.
+- **Figuras e tabelas:** título em cima (`\caption`), fonte embaixo obrigatória, mesmo de autoria própria (`\fonte{Elaborado pelos autores.}`); citadas no texto e perto da citação; conteúdo traduzido; tabelas sem traços verticais.
+- **Siglas:** forma completa na primeira ocorrência no texto, com a sigla entre parênteses, e entrada na lista de siglas do `main.tex`.
+- **Compilar** (em `docs/monografia/`): `latexmk -pdf main` (precisa do pacote babel em português, por exemplo `texlive-lang-portuguese`).
+
 ## Escopo do MVP e ordem de implementação
 
 MVP = compra privada ponta a ponta de um grupo de livros (todos os RFs essenciais). RF04 completo e RF15 podem vir depois.
@@ -173,7 +216,9 @@ Layout aprovado (D-003); o que ainda não existe está marcado:
 
 ```
 TCC/
-  docs/                    especificação (PDF v2 + fonte LaTeX v3 em docs/especificacao/), PRD, divergências, estado
+  docs/                    especificação (PDFs v2/v3; fonte histórico da v3 em docs/especificacao/), PRD, divergências, estado
+    monografia/            monografia no modelo TCC-PCS-EPUSP (fonte atual da especificação)
+    diretrizes/            diretrizes da Poli e do PCS, modelo LaTeX e material da disciplina
   site/                    módulo Go tcc/site
     cmd/site/              servidor web + roteador
     cmd/admin-seed/        cria o primeiro admin (RF01)
@@ -184,7 +229,14 @@ TCC/
     internal/db/           conexão e migrações (dbteste/: bancos de teste)
     web/                   templates/, static/ e renderização
     migrations/            SQL no formato goose
-  cdn/  programa-local/  ot-helper/                           (depois)
+    internal/chaves/       chaves AES dos livros e RSA de token por faixa (D-009, D-011)
+    internal/compra/       checkout, gateway mock, sender do OT, assinatura cega, e-mail, reenvio, reporte da CDN, publicação na CDN
+  protocolo/               módulo Go tcc/protocolo (D-013): Naor–Pinkas, ot-helper, semente, tokens, AES-GCM, formatos, pacote
+    tema/                  tema visual comum (D-014): tema.css + fontes (OFL), servido em /tema/
+  cdn/                     módulo Go tcc/cdn: cmd/cdn + internal/cdn (RF17, RF18)
+  programa-local/          módulo Go tcc/programa-local: cmd/livraria (CLI), cmd/livraria-janela (janela WebView2, Windows), internal/cliente, internal/janela (RF04, RF10–RF12)
+  ot-helper/               binário C++ sobre o libOTe (D-002); deps/ (libOTe instalado) e build/ fora do git
+  bin/                     executáveis da demonstração (fora do git)
   docker-compose.yml       Postgres de desenvolvimento
 ```
 
@@ -199,5 +251,24 @@ go test ./...                                          # testes; os de integraç
 go vet ./... && gofmt -l .                             # checagens
 ```
 
-Variáveis: `DATABASE_URL`, `ENDERECO`, `CHAVE_PACOTE` (site); `TEST_DATABASE_URL` (testes; cada teste usa um schema próprio, apagado no fim).
+Variáveis: `DATABASE_URL`, `ENDERECO`, `CHAVE_PACOTE`, `OT_HELPER`, `CDN_URL`, `SEGREDO_CDN`, `CAIXA_SAIDA` (site); `TEST_DATABASE_URL` e `OT_HELPER` (testes; cada teste usa um schema próprio, apagado no fim; sem `ot-helper` os testes de OT são pulados).
+
+Os outros componentes:
+
+```bash
+# ot-helper (Windows: no "Developer PowerShell for VS"; libOTe em ot-helper/deps/install)
+cmake -S ot-helper -B ot-helper/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=ot-helper/deps/install
+cmake --build ot-helper/build
+
+# CDN (dentro de cdn/); CHAVE_PACOTE_PUB = saída de `go run ./cmd/chave-pacote` no site
+SEGREDO_CDN=... CHAVE_PACOTE_PUB=... go run ./cmd/cdn          # http://localhost:8081, schema "cdn" no mesmo Postgres
+
+# Programa local (dentro de programa-local/)
+go build -ldflags "-X main.chavePacote=<hex>" -o livraria ./cmd/livraria   # ot-helper ao lado do executável ou OT_HELPER
+livraria catalogo | buscar -autor X | grupos | comprar -email E -livros 3,5 [-adiar] | baixar | recuperar resposta-ot.json | reenviar <compra> | compras
+```
+
+No Windows, `Claude outputs\build_app.bat` compila tudo em `bin\` (site, CDN, `livraria.exe`, `Livraria OT.exe` com a chave pública embutida, ot-helper) e roda os testes; `Claude outputs\iniciar_demo.bat` sobe o Postgres, o site e a CDN e abre a janela.
+
+O e-mail é um stub: cada mensagem vira um `.eml` em `CAIXA_SAIDA`, com a resposta do OT anexada (`resposta-ot.json`). O gateway é um mock: o pagamento `recusar` é recusado e qualquer outro valor é aprovado.
 Convenções do site: sem log de acesso (só erros, sem dados de visitante); CSP `default-src 'self'`; CSRF via `http.CrossOriginProtection`; avisos após redirect vão por chave fixa na URL, nunca com dados.

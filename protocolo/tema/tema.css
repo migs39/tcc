@@ -1,0 +1,134 @@
+/* Tema "Cofre criptográfico" — comum ao site, à CDN e ao programa local.
+   Fontes servidas pelo próprio componente (sem terceiros, D-003):
+   JetBrains Mono e Space Grotesk, ambas sob a SIL Open Font License 1.1
+   (fontes/*-OFL.txt). */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fontes/JetBrainsMono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("fontes/SpaceGrotesk.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --fundo: #05070a;          /* atrás das janelas */
+  --janela: #0d1117;         /* superfície principal */
+  --painel: #121922;         /* cartões, campos */
+  --lateral: #0a0e13;        /* barra lateral */
+  --linha: #22303b;          /* bordas */
+  --linha-forte: #2f4250;
+  --texto: #d6e4dc;
+  --suave: #8ea39a;          /* 6.3:1 sobre --janela */
+  --acento: #39d98a;         /* assinatura válida, ação principal */
+  --acento-fundo: #13231b;
+  --sobre-acento: #04110a;
+  --alerta: #ffb020;
+  --alerta-fundo: #2a1f0a;
+  --erro: #ff7a7a;
+  --erro-fundo: #2a1214;
+  --raio: 4px;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --titulo: "Space Grotesk", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--fundo); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font: 15px/1.55 var(--mono);
+  background: var(--janela);
+  color: var(--texto);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: var(--titulo); font-weight: 700; line-height: 1.15; color: var(--texto); }
+a { color: var(--acento); text-underline-offset: 3px; }
+a:hover { color: #7af0b6; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+::selection { background: var(--acento); color: var(--sobre-acento); }
+code, .hash { font-family: var(--mono); color: var(--acento); word-break: break-all; }
+
+/* Campos */
+label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--texto); }
+input, select, textarea {
+  font: inherit; font-size: 14px; color: var(--texto);
+  min-height: 42px; padding: 8px 12px;
+  background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio);
+}
+textarea { min-height: 90px; }
+input::placeholder, textarea::placeholder { color: var(--suave); }
+input:focus, select:focus, textarea:focus { border-color: var(--acento); outline: none; box-shadow: 0 0 0 3px rgba(57, 217, 138, .18); }
+input[type="file"] { padding: 6px 8px; color: var(--suave); }
+input[type="file"]::file-selector-button {
+  font: 700 14px var(--titulo); margin-right: 12px; min-height: 32px; padding: 0 14px; cursor: pointer;
+  background: transparent; color: var(--acento); border: 1px solid var(--acento); border-radius: var(--raio);
+}
+input[type="checkbox"] { min-height: 0; accent-color: var(--acento); width: 18px; height: 18px; }
+
+/* Botões */
+button, .botao {
+  font: inherit; font-family: var(--titulo); font-weight: 700; font-size: 15px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 18px;
+  border: 1px solid var(--acento); border-radius: var(--raio);
+  background: var(--acento); color: var(--sobre-acento);
+  cursor: pointer; text-decoration: none; justify-self: start;
+}
+button:hover, .botao:hover { background: #5ce6a1; color: var(--sobre-acento); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.secundario, .botao.secundario { background: transparent; color: var(--acento); }
+button.secundario:hover, .botao.secundario:hover { background: var(--acento-fundo); }
+button.perigo { background: transparent; color: var(--erro); border-color: var(--erro); }
+button.perigo:hover { background: var(--erro-fundo); }
+button.link { background: none; border: 0; color: var(--acento); padding: 0; min-height: 0; font-family: var(--mono); font-weight: 500; }
+
+/* Superfícies */
+.cartao {
+  background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio);
+  padding: 18px 20px; display: grid; gap: 12px;
+}
+.cartao h2, .cartao h3 { margin: 0; font-size: 18px; }
+.rotulo { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+.nota { margin: 0; color: var(--suave); font-size: 13px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px;
+  border: 1px solid var(--linha); border-radius: 999px; background: var(--painel);
+  font-size: 13px; color: var(--texto);
+}
+.chip.ativo { border-color: var(--acento); color: var(--acento); background: var(--acento-fundo); }
+.selo-ok { color: var(--acento); }
+
+/* Mensagens */
+.aviso, .erro, .alerta { margin: 0 0 16px; padding: 10px 14px; border-radius: var(--raio); font-size: 14px; }
+.aviso { border: 1px solid var(--acento); background: var(--acento-fundo); color: var(--texto); }
+.alerta { border: 1px solid var(--alerta); background: var(--alerta-fundo); color: var(--texto); }
+.erro { border: 1px solid var(--erro); background: var(--erro-fundo); color: var(--texto); }
+
+/* Tabelas */
+.tabela { overflow-x: auto; border: 1px solid var(--linha); border-radius: var(--raio); }
+table { width: 100%; border-collapse: collapse; background: var(--janela); font-size: 14px; }
+th { text-align: left; padding: 10px 12px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); background: var(--painel); border-bottom: 1px solid var(--linha); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--linha); }
+tr:last-child td { border-bottom: 0; }
+
+/* Números do painel */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.stat { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 14px 16px; display: grid; gap: 2px; }
+.stat strong { font-family: var(--titulo); font-size: 30px; line-height: 1.1; color: var(--texto); }
+.stat span { font-size: 12px; color: var(--suave); }
+
+/* Marca */
+.marca-ot { display: inline-flex; align-items: center; gap: 10px; font-family: var(--titulo); font-weight: 700; font-size: 18px; color: var(--texto); text-decoration: none; }
+.marca-ot .icone { width: 30px; height: 30px; border-radius: var(--raio); background: var(--acento); display: inline-grid; place-items: center; }
+.marca-ot:hover { color: var(--texto); }
+
+.oculto-visual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

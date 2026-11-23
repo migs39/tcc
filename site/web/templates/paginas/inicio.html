@@ -2,35 +2,35 @@
 {{/* Página pública de apresentação e download. Igual para todos os
      visitantes: sem cookies, scripts ou recursos de terceiros (D-003, D-006). */}}
 {{define "corpo"}}
+<div class="lp">
 <header class="lp-topo">
-  <a class="lp-marca" href="/"><span class="lp-selo" aria-hidden="true"></span>Livraria</a>
+  <a class="marca-ot" href="/"><span class="icone"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04110a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Livraria OT</a>
   <nav>
     <a href="#como">Como funciona</a>
     <a href="#verificar">Verificar catálogo</a>
-    <a class="lp-botao lp-botao-pequeno" href="#baixar">Baixar</a>
+    <a class="botao" href="#baixar">Baixar</a>
   </nav>
 </header>
 
 <section class="lp-hero">
-  <div class="lp-hero-texto">
-    <p class="lp-sobretitulo">Livraria digital com Oblivious Transfer</p>
-    <h1>Compre livros sem contar a ninguém <em>quais</em> livros você comprou.</h1>
+  <div>
+    <p class="lp-sobretitulo">Livraria digital com transferência inconsciente</p>
+    <h1>Sua escolha sai daqui <em>cifrada</em>. Só a sua máquina a abre.</h1>
     <p class="lp-lead">A loja recebe o pagamento, mas não fica sabendo quais livros você escolheu. A escolha é protegida por um protocolo criptográfico, e os livros só são abertos no seu computador.</p>
     <div class="lp-acoes">
-      <a class="lp-botao" href="#baixar">Baixar o programa</a>
-      <a class="lp-botao lp-botao-contorno" href="#como">Como funciona</a>
+      <a class="botao" href="#baixar">Baixar o programa</a>
+      <a class="botao secundario" href="#como">Como funciona</a>
     </div>
   </div>
-  <div class="lp-ilustracao" aria-hidden="true">
-    <div class="lp-estante">
-      <span class="lp-livro l1"></span><span class="lp-livro l2"></span><span class="lp-livro l3"></span>
-      <span class="lp-livro l4"></span><span class="lp-livro l5"></span><span class="lp-livro l6"></span>
-    </div>
-    <div class="lp-cartao-segredo">
-      <span class="lp-cadeado"></span>
-      <p><strong>Loja</strong> sabe: 3 livros de R$ 29,90</p>
-      <p><strong>Loja</strong> não sabe: quais</p>
-    </div>
+  <div class="lp-terminal" aria-label="Exemplo do que a loja registra numa compra">
+    <div class="lp-terminal-barra" aria-hidden="true"><i></i><i></i><i></i><span>o que a loja vê</span></div>
+<pre><span class="c"># compra 71c19e5d…</span>
+email        <span class="ok">cliente@exemplo.com</span>
+grupo        <span class="ok">R$ 29,90</span>
+quantidade   <span class="ok">3</span>
+valor        <span class="ok">R$ 89,70</span>
+livros       <span class="x">????????  (protegido por OT)</span>
+chaves       <span class="x">????????  (só no seu computador)</span></pre>
   </div>
 </section>
 
@@ -100,7 +100,7 @@
       <h2>Programa local</h2>
       <p>Windows · gratuito · conversa só com a loja e com a distribuição dos livros, sem telemetria.</p>
     </div>
-    <span class="lp-botao lp-botao-desativado" aria-disabled="true">Em desenvolvimento</span>
+    <span class="botao lp-desativado" aria-disabled="true">Distribuído pelo repositório</span>
   </section>
 </main>
 
@@ -108,4 +108,5 @@
   <p>TCC · Engenharia de Computação · Escola Politécnica da USP · 2026</p>
   <p>Esta página não usa cookies, analytics nem recursos de terceiros.</p>
 </footer>
+</div>
 {{end}}

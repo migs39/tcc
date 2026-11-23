@@ -36,6 +36,9 @@ type Grupo struct {
 	VersaoGrupoID int64   `json:"versao_grupo_id"`
 	VersaoNumero  int     `json:"versao_numero"`
 	Livros        []int64 `json:"livros"`
+	// Chave pública de assinatura cega da faixa (D-011), PKIX DER. Vem no
+	// pacote assinado para todos os clientes receberem a mesma chave.
+	ChaveToken []byte `json:"chave_token,omitempty"`
 }
 
 type Livro struct {
@@ -72,8 +75,9 @@ func lerConteudo(ctx context.Context, tx pgx.Tx) (Catalogo, map[int64][]byte, er
 
 	// Grupos: versão mais recente de cada faixa ativa, só se tiver livros.
 	linhas, err = tx.Query(ctx,
-		`SELECT DISTINCT ON (f.id) f.id, f.valor_centavos, v.id, v.numero
+		`SELECT DISTINCT ON (f.id) f.id, f.valor_centavos, v.id, v.numero, k.publica
 		   FROM faixas_preco f JOIN versoes_grupo v ON v.faixa_id = f.id
+		   LEFT JOIN chaves_tokens k ON k.faixa_id = f.id
 		  WHERE f.ativa
 		  ORDER BY f.id, v.numero DESC`)
 	if err != nil {
@@ -81,7 +85,7 @@ func lerConteudo(ctx context.Context, tx pgx.Tx) (Catalogo, map[int64][]byte, er
 	}
 	grupos, err := pgx.CollectRows(linhas, func(l pgx.CollectableRow) (Grupo, error) {
 		var g Grupo
-		err := l.Scan(&g.FaixaID, &g.PrecoCentavos, &g.VersaoGrupoID, &g.VersaoNumero)
+		err := l.Scan(&g.FaixaID, &g.PrecoCentavos, &g.VersaoGrupoID, &g.VersaoNumero, &g.ChaveToken)
 		return g, err
 	})
 	if err != nil {

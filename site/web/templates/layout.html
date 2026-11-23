@@ -4,29 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>{{block "titulo" .}}Livraria{{end}}</title>
+<title>{{block "titulo" .}}Livraria OT{{end}}</title>
+<link rel="stylesheet" href="/tema/tema.css">
 <link rel="stylesheet" href="/static/estilo.css">
 </head>
 <body>
 {{block "corpo" .}}
-<header class="topo">
-  <a class="marca" href="/">Livraria</a>
-  {{with .Admin}}
-  <nav>
+<div class="adm">
+  <nav class="adm-lateral" aria-label="Administração">
+    <a class="marca-ot" href="/"><span class="icone"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04110a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Livraria OT</a>
+    {{with .Admin}}
+    <span class="rotulo">Catálogo</span>
     <a href="/admin/livros">Livros</a>
     <a href="/admin/precos">Preços</a>
     <a href="/admin/categorias">Categorias</a>
+    <span class="rotulo">Operação</span>
+    <a href="/admin/cdn">CDN e lotes</a>
     <a href="/admin/">Administradores</a>
-    <span class="quem">{{.Nome}}</span>
-    <form method="post" action="/admin/sair"><button class="link">Sair</button></form>
+    <div class="adm-quem">
+      <span>{{.Nome}}</span>
+      <form method="post" action="/admin/sair"><button class="link">Sair</button></form>
+    </div>
+    {{end}}
   </nav>
-  {{end}}
-</header>
-<main>
-  {{with .Aviso}}<p class="aviso" role="status">{{.}}</p>{{end}}
-  {{with .Erro}}<p class="erro" role="alert">{{.}}</p>{{end}}
-  {{block "conteudo" .}}{{end}}
-</main>
+  <main class="adm-conteudo">
+    {{with .Aviso}}<p class="aviso" role="status">{{.}}</p>{{end}}
+    {{with .Erro}}<p class="erro" role="alert">{{.}}</p>{{end}}
+    {{block "conteudo" .}}{{end}}
+  </main>
+</div>
 {{end}}
 </body>
 </html>{{end}}

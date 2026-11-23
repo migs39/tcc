@@ -96,6 +96,34 @@ func TestCabecalhosDeSeguranca(t *testing.T) {
 	}
 }
 
+// Formulário com texto fora de UTF-8 (ex.: Latin-1) é recusado com 422 antes
+// de chegar ao banco, em vez de virar erro interno.
+func TestRecusaFormularioForaDeUTF8(t *testing.T) {
+	tpl, err := web.Carregar()
+	if err != nil {
+		t.Fatal(err)
+	}
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	rot := NovoRoteador(tpl, log, admin.NovosHandlers(nil, tpl, log))
+	for _, corpo := range []string{"nome=Fic%E7%E3o", "Fic%E7%E3o=x"} {
+		req := httptest.NewRequest("POST", "/admin/categorias", strings.NewReader(corpo))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rec := httptest.NewRecorder()
+		rot.ServeHTTP(rec, req)
+		if rec.Code != http.StatusUnprocessableEntity {
+			t.Errorf("%q: esperado 422, veio %d", corpo, rec.Code)
+		}
+	}
+	// UTF-8 válido passa adiante (aqui cai no login exigido).
+	req := httptest.NewRequest("POST", "/admin/categorias", strings.NewReader("nome=Fic%C3%A7%C3%A3o"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	rot.ServeHTTP(rec, req)
+	if rec.Code == http.StatusUnprocessableEntity {
+		t.Fatal("formulário em UTF-8 válido foi recusado")
+	}
+}
+
 // RF01: só administradores autenticados acessam a área administrativa.
 func TestAreaAdminExigeLogin(t *testing.T) {
 	srv, _ := novoServidor(t)

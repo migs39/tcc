@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- A página não acessa a rede: nada de fora é carregado, e as operações
+     passam pelo programa (D-004). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; form-action 'none'">
+<title>Livraria OT</title>
+<style>
+/*TEMA*/
+
+html, body { height: 100%; }
+body { overflow: hidden; }
+.app { display: flex; height: 100vh; }
+
+/* Lateral */
+.lateral { width: 216px; flex: none; background: var(--lateral); border-right: 1px solid var(--linha); padding: 20px 14px; display: flex; flex-direction: column; gap: 6px; }
+.lateral .marca-ot { margin: 4px 8px 20px; }
+.nav { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: var(--raio); border: 1px solid transparent; background: none; color: #9fb3a9; font: 600 14px var(--mono); text-align: left; cursor: pointer; justify-content: flex-start; }
+.nav:hover { background: var(--painel); color: var(--texto); }
+.nav[aria-current="page"] { background: var(--acento-fundo); color: var(--acento); border-color: #1d3a2b; }
+.nav .conta { margin-left: auto; font-size: 12px; color: var(--suave); }
+.rodape-lateral { margin-top: auto; padding: 12px 10px 4px; font-size: 12px; line-height: 1.7; color: var(--suave); border-top: 1px solid var(--linha); }
+.rodape-lateral .ok { color: var(--acento); }
+
+/* Conteúdo */
+.conteudo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rolagem { flex: 1; overflow-y: auto; padding: 24px 28px 28px; }
+.barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.busca { position: relative; flex: 1 1 320px; }
+.busca svg { position: absolute; left: 13px; top: 12px; }
+.busca input { width: 100%; padding-left: 40px; }
+.barra select { min-width: 150px; }
+.dica { font-size: 12px; color: var(--suave); }
+h1.titulo { margin: 0 0 18px; font-size: 28px; }
+
+.grupo { margin-bottom: 30px; }
+.grupo-topo { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.grupo-topo h2 { margin: 0; font-size: 22px; }
+.grupo-topo .dica { margin-left: auto; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+
+.livro { all: unset; display: flex; flex-direction: column; gap: 8px; cursor: pointer; min-width: 0; }
+.livro:hover, .livro:focus { background: none; color: inherit; }
+.livro:hover .capa { border-color: var(--acento); }
+.livro:focus-visible .capa { outline: 2px solid var(--acento); outline-offset: 3px; }
+.capa { position: relative; aspect-ratio: 2 / 3; border-radius: var(--raio); border: 1px solid #24443a; overflow: hidden; background: #0f2a1f; display: flex; flex-direction: column; padding: 12px; box-sizing: border-box; }
+.capa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.capa .t { font: 700 15px/1.15 var(--titulo); color: var(--acento); }
+.capa .h { margin-top: auto; font-size: 10px; color: var(--acento); opacity: .7; }
+.livro[aria-pressed="true"] .capa { box-shadow: 0 0 0 3px var(--acento); }
+.selo { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: var(--acento); display: none; align-items: center; justify-content: center; }
+.livro[aria-pressed="true"] .selo { display: flex; }
+.livro .nome { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--texto); }
+.livro .autor { font-size: 12px; color: var(--suave); }
+.livro.bloqueado { cursor: not-allowed; opacity: .55; }
+
+/* Painel de compra */
+.compra { flex: none; border-top: 1px solid var(--linha); background: var(--painel); padding: 16px 28px; display: none; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+.compra.visivel { display: flex; }
+.compra .info { flex: 1 1 360px; display: grid; gap: 8px; }
+.compra h3 { margin: 0; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+.compra p { margin: 0; font-size: 13px; color: var(--suave); }
+.compra .campos { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.compra .campos label { flex: 1 1 220px; }
+.compra .adiar { display: flex; align-items: center; gap: 8px; font-weight: 500; flex: 0 0 auto; min-height: 42px; }
+.compra .acoes { display: flex; gap: 10px; align-items: center; }
+
+/* Listas */
+.lista { display: grid; gap: 12px; }
+.item { background: var(--painel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 16px 18px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.item .corpo { flex: 1 1 320px; min-width: 0; display: grid; gap: 4px; }
+.item .linha1 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.item strong { font-family: var(--titulo); font-size: 16px; }
+.item .meta { font-size: 12px; color: var(--suave); }
+.item .botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.estado { font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--linha); color: var(--suave); }
+.estado.baixada { color: var(--acento); border-color: var(--acento); }
+.estado.pendente { color: var(--alerta); border-color: var(--alerta); }
+.estado.aguardando { color: var(--erro); border-color: var(--erro); }
+.vazio { padding: 40px; text-align: center; color: var(--suave); border: 1px dashed var(--linha-forte); border-radius: var(--raio); }
+
+/* Mensagens */
+.toast { position: fixed; right: 24px; bottom: 24px; max-width: 460px; z-index: 10; display: none; }
+.toast.visivel { display: block; }
+.ocupado { position: fixed; inset: 0; background: rgba(5, 7, 10, .72); display: none; align-items: center; justify-content: center; z-index: 20; }
+.ocupado.visivel { display: flex; }
+.ocupado .cartao { min-width: 380px; }
+.passos { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; }
+.passos li { color: var(--suave); }
+.passos li.feito { color: var(--acento); }
+.passos li.agora { color: var(--texto); }
+.passos li.feito::before { content: "✓ "; }
+.passos li.agora::before { content: "› "; }
+.passos li:not(.feito):not(.agora)::before { content: "· "; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lateral" aria-label="Seções">
+    <span class="marca-ot"><span class="icone"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04110a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Livraria OT</span>
+    <button class="nav" data-tela="catalogo" aria-current="page">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Catálogo</button>
+    <button class="nav" data-tela="compras">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2zM9 7h6M9 11h6"/></svg>Compras<span class="conta" id="contaCompras"></span></button>
+    <button class="nav" data-tela="biblioteca">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v16H3zM3 12h18M8 4v8M13 12v8"/></svg>Biblioteca<span class="conta" id="contaBib"></span></button>
+    <div class="rodape-lateral" id="rodape">carregando…</div>
+  </nav>
+
+  <div class="conteudo">
+    <main class="rolagem" id="tela"></main>
+    <section class="compra" id="painelCompra" aria-label="Compra privada">
+      <div class="info">
+        <h3><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#39d98a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg><span id="compraTitulo">Compra privada</span></h3>
+        <p id="compraTexto"></p>
+        <div class="campos">
+          <label>E-mail para a resposta do OT<input type="email" id="email" placeholder="voce@exemplo.com" autocomplete="email"></label>
+          <label style="flex: 0 1 200px">Pagamento (simulado)
+            <select id="pagamento"><option value="aprovar">Aprovar</option><option value="recusar">Recusar</option></select>
+          </label>
+          <label class="adiar"><input type="checkbox" id="adiar">Baixar depois</label>
+        </div>
+      </div>
+      <div class="acoes">
+        <button type="button" class="secundario" id="limpar">Limpar</button>
+        <button type="button" id="comprar"></button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="ocupado" id="ocupado" role="dialog" aria-modal="true" aria-labelledby="ocupadoTitulo">
+  <div class="cartao">
+    <h2 id="ocupadoTitulo">Compra privada</h2>
+    <ul class="passos" id="passos"></ul>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+// ---- ponte com o programa (Go) ------------------------------------------
+const pendentes = {}, chegadas = {};
+window._resposta = (id, res, err) => {
+  const p = pendentes[id];
+  if (!p) { chegadas[id] = { res, err }; return; }
+  delete pendentes[id];
+  err ? p.reject(new Error(err)) : p.resolve(res);
+};
+async function api(metodo, ...args) {
+  const id = await window._chamar(metodo, args);
+  return new Promise((resolve, reject) => {
+    const c = chegadas[id];
+    if (c) { delete chegadas[id]; c.err ? reject(new Error(c.err)) : resolve(c.res); return; }
+    pendentes[id] = { resolve, reject };
+  });
+}
+
+// ---- utilidades ----------------------------------------------------------
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const preco = (c) => "R$ " + Math.floor(c / 100) + "," + String(c % 100).padStart(2, "0");
+const svgCheck = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#04110a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+const svgBusca = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8ea39a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"/></svg>';
+let toastT;
+function aviso(msg, tipo = "aviso") {
+  const t = $("#toast");
+  t.className = "toast visivel " + tipo;
+  t.textContent = msg;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => (t.className = "toast"), tipo === "erro" ? 9000 : 4500);
+}
+function hash(id) { // só decoração da capa sem miniatura
+  let h = 2166136261 ^ id;
+  for (let i = 0; i < 6; i++) h = Math.imul(h ^ (h >>> 13), 16777619);
+  return "0x" + (h >>> 0).toString(16).padStart(8, "0");
+}
+
+// ---- estado --------------------------------------------------------------
+const estado = { tela: "catalogo", cat: null, busca: "", categoria: "", faixa: "", sel: new Set(), faixaSel: null, compras: [], info: null };
+try { $("#email").value = localStorage.getItem("email") || ""; } catch (_) {}
+
+// ---- navegação -----------------------------------------------------------
+document.querySelectorAll(".nav").forEach((b) => b.addEventListener("click", () => ir(b.dataset.tela)));
+function ir(tela) {
+  estado.tela = tela;
+  document.querySelectorAll(".nav").forEach((b) => b.toggleAttribute("aria-current", b.dataset.tela === tela));
+  document.querySelectorAll(".nav[aria-current]").forEach((b) => b.setAttribute("aria-current", "page"));
+  desenhar();
+}
+function desenhar() {
+  if (estado.tela === "catalogo") telaCatalogo();
+  else if (estado.tela === "compras") telaCompras();
+  else telaBiblioteca();
+  painelCompra();
+}
+
+// ---- catálogo ------------------------------------------------------------
+async function carregarCatalogo(sinc) {
+  try {
+    estado.cat = await api("catalogo", sinc);
+    if (estado.cat.aviso) aviso(estado.cat.aviso, "alerta");
+  } catch (e) {
+    estado.cat = null;
+    aviso(e.message, "erro");
+  }
+  rodape();
+  if (estado.tela === "catalogo") desenhar();
+}
+function rodape() {
+  const c = estado.cat, i = estado.info;
+  $("#rodape").innerHTML = (c ? `catálogo v${c.versao}<br><span class="ok">assinatura conferida ✓</span>${c.offline ? "<br>sem conexão: catálogo guardado" : ""}` : "catálogo não baixado")
+    + (i ? `<br>${esc(i.Site.replace(/^https?:\/\//, ""))}<br>${esc(i.CDN.replace(/^https?:\/\//, ""))}` : "");
+}
+function telaCatalogo() {
+  const t = $("#tela"), c = estado.cat;
+  if (!c) {
+    t.innerHTML = `<h1 class="titulo">Catálogo</h1><div class="vazio"><p>O catálogo ainda não foi baixado.</p><button type="button" id="baixarCat">Baixar o catálogo</button></div>`;
+    $("#baixarCat").onclick = () => carregarCatalogo(true);
+    return;
+  }
+  const faixas = c.grupos.map((g) => `<option value="${g.faixa_id}" ${String(g.faixa_id) === estado.faixa ? "selected" : ""}>${preco(g.preco)}</option>`).join("");
+  const cats = c.categorias.map((n) => `<option ${n === estado.categoria ? "selected" : ""}>${esc(n)}</option>`).join("");
+  t.innerHTML = `
+    <div class="barra">
+      <label class="busca"><span class="oculto-visual">Buscar no catálogo</span>${svgBusca}<input type="search" id="busca" placeholder="Buscar título, autor ou descrição" value="${esc(estado.busca)}"></label>
+      <label><span class="oculto-visual">Categoria</span><select id="categoria"><option value="">Todas as categorias</option>${cats}</select></label>
+      <label><span class="oculto-visual">Preço</span><select id="faixa"><option value="">Todos os preços</option>${faixas}</select></label>
+      <button type="button" class="secundario" id="atualizar">Atualizar catálogo</button>
+    </div>
+    <p class="dica" style="margin: -6px 0 20px">A busca roda só neste computador: o site não vê o que você procura. Uma compra é sempre de um único grupo de mesmo preço.</p>
+    <div id="grupos"></div>`;
+  $("#busca").oninput = (e) => { estado.busca = e.target.value; grupos(); };
+  $("#categoria").onchange = (e) => { estado.categoria = e.target.value; grupos(); };
+  $("#faixa").onchange = (e) => { estado.faixa = e.target.value; grupos(); };
+  $("#atualizar").onclick = () => carregarCatalogo(true);
+  grupos();
+}
+function grupos() {
+  const c = estado.cat, q = estado.busca.trim().toLowerCase();
+  const casa = (l) => (!q || (l.titulo + " " + l.autor + " " + l.descricao).toLowerCase().includes(q))
+    && (!estado.categoria || l.categoria === estado.categoria);
+  let html = "";
+  for (const g of c.grupos) {
+    if (estado.faixa && String(g.faixa_id) !== estado.faixa) continue;
+    const livros = c.livros.filter((l) => l.faixa_id === g.faixa_id && casa(l));
+    if (!livros.length) continue;
+    const outro = estado.faixaSel !== null && estado.faixaSel !== g.faixa_id;
+    html += `<section class="grupo">
+      <div class="grupo-topo"><h2>Grupo ${preco(g.preco)}</h2>
+        <span class="chip">${g.livros} ${g.livros === 1 ? "livro" : "livros"} · versão ${g.versao}</span>
+        ${g.compravel ? "" : `<span class="chip" style="color: var(--alerta); border-color: var(--alerta)">indisponível: menos de ${c.minimo} livros</span>`}
+        ${outro ? `<span class="dica">escolher aqui troca a seleção de grupo</span>` : ""}
+      </div>
+      <div class="grade">${livros.map((l) => cartao(l, g.compravel)).join("")}</div></section>`;
+  }
+  $("#grupos").innerHTML = html || `<div class="vazio">Nenhum livro encontrado.</div>`;
+  document.querySelectorAll(".livro").forEach((b) => (b.onclick = () => alternar(Number(b.dataset.id))));
+}
+function cartao(l, compravel) {
+  const sel = estado.sel.has(l.id);
+  const capa = l.capa ? `<img src="${l.capa}" alt="">` : `<span class="t">${esc(l.titulo)}</span><span class="h">${hash(l.id)}</span>`;
+  return `<button type="button" class="livro${compravel ? "" : " bloqueado"}" data-id="${l.id}" aria-pressed="${sel}" ${compravel ? "" : "disabled"} title="${esc(l.descricao)}">
+    <span class="capa">${capa}<span class="selo">${svgCheck}</span></span>
+    <span class="nome">${esc(l.titulo)}</span><span class="autor">${esc(l.autor)}${l.ano ? " · " + l.ano : ""}</span></button>`;
+}
+function alternar(id) {
+  const l = estado.cat.livros.find((x) => x.id === id);
+  if (!l) return;
+  if (estado.faixaSel !== null && estado.faixaSel !== l.faixa_id) {
+    estado.sel.clear();
+    aviso("Seleção trocada para o grupo " + preco(l.preco) + ": uma compra é de um único grupo.");
+  }
+  estado.sel.has(id) ? estado.sel.delete(id) : estado.sel.add(id);
+  estado.faixaSel = estado.sel.size ? l.faixa_id : null;
+  grupos();
+  painelCompra();
+}
+function painelCompra() {
+  const p = $("#painelCompra"), n = estado.sel.size;
+  p.classList.toggle("visivel", estado.tela === "catalogo" && n > 0);
+  if (!n) return;
+  const g = estado.cat.grupos.find((x) => x.faixa_id === estado.faixaSel);
+  $("#compraTitulo").textContent = `Compra privada · ${n} ${n === 1 ? "livro" : "livros"}`;
+  $("#compraTexto").textContent = `O site vê só: grupo ${preco(g.preco)} × ${n} e o seu e-mail. Quais livros, só este computador sabe.`;
+  $("#comprar").innerHTML = `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04110a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4"/></svg>Comprar · ${preco(g.preco * n)}`;
+}
+$("#limpar").onclick = () => { estado.sel.clear(); estado.faixaSel = null; grupos(); painelCompra(); };
+
+const PASSOS = ["Gerando a semente e a requisição do OT", "Cegando os tokens", "Pagamento e resposta do site", "Trocando os tokens na CDN", "Extraindo as chaves e decifrando"];
+let passoT;
+function ocupado(ligado, titulo) {
+  $("#ocupado").classList.toggle("visivel", ligado);
+  clearInterval(passoT);
+  if (!ligado) return;
+  $("#ocupadoTitulo").textContent = titulo;
+  let i = 0;
+  const pinta = () => ($("#passos").innerHTML = PASSOS.map((p, k) => `<li class="${k < i ? "feito" : k === i ? "agora" : ""}">${p}</li>`).join(""));
+  pinta();
+  passoT = setInterval(() => { if (i < PASSOS.length - 1) { i++; pinta(); } }, 700);
+}
+$("#comprar").onclick = async () => {
+  const email = $("#email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { aviso("Informe um e-mail válido para receber a resposta do OT.", "erro"); $("#email").focus(); return; }
+  try { localStorage.setItem("email", email); } catch (_) {}
+  ocupado(true, "Compra privada em andamento");
+  try {
+    const r = await api("comprar", { email, livros: [...estado.sel], pagamento: $("#pagamento").value, adiar: $("#adiar").checked });
+    estado.sel.clear(); estado.faixaSel = null;
+    if (r.erro) aviso(r.erro, "alerta");
+    else aviso(r.estado === "baixada" ? "Compra aprovada. Livros decifrados na biblioteca." : "Compra aprovada. Baixe quando quiser em Compras.");
+    await carregarCompras();
+    ir(r.estado === "baixada" ? "biblioteca" : "compras");
+  } catch (e) {
+    aviso(e.message, "erro");
+  } finally {
+    ocupado(false);
+  }
+};
+
+// ---- compras -------------------------------------------------------------
+async function carregarCompras() {
+  try { estado.compras = await api("compras"); } catch (e) { aviso(e.message, "erro"); }
+  const pend = estado.compras.filter((c) => c.estado !== "baixada").length;
+  const livros = estado.compras.reduce((s, c) => s + c.baixados.filter(Boolean).length, 0);
+  $("#contaCompras").textContent = pend ? pend : "";
+  $("#contaBib").textContent = livros ? livros : "";
+}
+const NOME_ESTADO = { baixada: "baixada", pendente: "download pendente", aguardando: "aguardando resposta" };
+function telaCompras() {
+  const t = $("#tela");
+  const itens = estado.compras.map((c) => `
+    <div class="item">
+      <div class="corpo">
+        <div class="linha1"><strong>${esc(c.titulos.join(" · "))}</strong><span class="estado ${c.estado}">${NOME_ESTADO[c.estado]}</span></div>
+        <span class="meta">${c.id ? "compra " + esc(c.id.slice(0, 12)) + "…" : "compra sem resposta"} · ${esc(c.email)}</span>
+        ${c.erro ? `<span class="meta" style="color: var(--erro)">${esc(c.erro)}</span>` : ""}
+      </div>
+      <div class="botoes">
+        ${c.estado === "pendente" ? `<button type="button" data-baixar="${esc(c.id)}">Baixar e decifrar</button>` : ""}
+        ${c.id ? `<button type="button" class="secundario" data-reenviar="${esc(c.id)}">Reenviar e-mail</button>` : ""}
+      </div>
+    </div>`).join("");
+  t.innerHTML = `<h1 class="titulo">Compras</h1>
+    <div class="lista">${itens || `<div class="vazio">Nenhuma compra neste computador.</div>`}</div>
+    <section class="cartao" style="margin-top: 24px; max-width: 640px">
+      <h2>Recuperar uma compra pelo e-mail</h2>
+      <p class="nota">Se a compra foi interrompida depois do pagamento, abra aqui o anexo <code>resposta-ot.json</code> do e-mail. As chaves saem dele junto com a semente guardada neste computador; sem ela, não há como recuperar.</p>
+      <label>Arquivo da resposta do OT<input type="file" id="arquivoResposta" accept=".json,application/json"></label>
+    </section>`;
+  t.querySelectorAll("[data-baixar]").forEach((b) => (b.onclick = async () => {
+    ocupado(true, "Baixando e decifrando");
+    try {
+      const r = await api("baixar", b.dataset.baixar);
+      r.erro ? aviso(r.erro, "erro") : aviso("Livros decifrados na biblioteca.");
+      await carregarCompras(); desenhar();
+    } catch (e) { aviso(e.message, "erro"); } finally { ocupado(false); }
+  }));
+  t.querySelectorAll("[data-reenviar]").forEach((b) => (b.onclick = async () => {
+    try { aviso(await api("reenviar", b.dataset.reenviar)); } catch (e) { aviso(e.message, "erro"); }
+  }));
+  $("#arquivoResposta").onchange = async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const texto = await f.text();
+    ocupado(true, "Recuperando a compra");
+    try {
+      const r = await api("recuperar", texto);
+      r.erro ? aviso(r.erro, "erro") : aviso("Compra recuperada com a semente deste computador.");
+      await carregarCompras(); desenhar();
+    } catch (err) { aviso(err.message, "erro"); } finally { ocupado(false); e.target.value = ""; }
+  };
+}
+
+// ---- biblioteca ----------------------------------------------------------
+function telaBiblioteca() {
+  const t = $("#tela");
+  const livros = [];
+  for (const c of estado.compras) c.baixados.forEach((arq, i) => arq && livros.push({ titulo: c.titulos[i], arq }));
+  t.innerHTML = `<div class="barra" style="justify-content: space-between"><h1 class="titulo" style="margin: 0">Biblioteca</h1>
+      <button type="button" class="secundario" id="abrirPasta">Abrir a pasta</button></div>
+    <p class="dica" style="margin: 0 0 18px">Livros decifrados neste computador. A chave de cada um nunca saiu daqui.</p>
+    <div class="lista">${livros.map((l, i) => `<div class="item"><div class="corpo"><strong>${esc(l.titulo)}</strong><span class="meta">${esc(l.arq)}</span></div>
+      <div class="botoes"><button type="button" data-abrir="${i}">Abrir</button></div></div>`).join("") || `<div class="vazio">Nenhum livro ainda. Compre no catálogo.</div>`}</div>`;
+  $("#abrirPasta").onclick = () => api("abrirPasta").catch((e) => aviso(e.message, "erro"));
+  t.querySelectorAll("[data-abrir]").forEach((b) => (b.onclick = () => api("abrir", livros[Number(b.dataset.abrir)].arq).catch((e) => aviso(e.message, "erro"))));
+}
+
+// ---- início --------------------------------------------------------------
+(async () => {
+  try { estado.info = await api("info"); } catch (_) {}
+  desenhar();
+  await Promise.all([carregarCatalogo(true), carregarCompras()]);
+})();
+</script>
+</body>
+</html>

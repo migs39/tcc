@@ -9,6 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"tcc/site/internal/chaves"
 )
 
 // Pacote é uma versão publicada do catálogo.
@@ -43,6 +45,10 @@ func (s *Servico) ChavePublica() ed25519.PublicKey {
 // Atual devolve o pacote da versão corrente do catálogo, regerando só se o
 // catálogo mudou desde a última vez.
 func (s *Servico) Atual(ctx context.Context) (*Pacote, error) {
+	// Toda faixa ativa precisa de chave de token antes de ir para o pacote.
+	if err := chaves.GarantirChavesToken(ctx, s.pool); err != nil {
+		return nil, err
+	}
 	var revisao int64
 	if err := s.pool.QueryRow(ctx, `SELECT revisao FROM catalogo_revisao`).Scan(&revisao); err != nil {
 		return nil, err

@@ -1,0 +1,25 @@
+{{define "titulo"}}CDN e lotes{{end}}
+{{define "conteudo"}}
+<h1>CDN e lotes</h1>
+<p class="nota">RF18 e UC17: a CDN reporta só os tokens usados e a quantidade, em lotes embaralhados e sem horário por token. A remuneração é a tarifa por token vezes a quantidade (D-014).</p>
+<div class="stats" style="margin: 20px 0">
+  <div class="stat"><span>Lotes recebidos</span><strong>{{.Lotes}}</strong></div>
+  <div class="stat"><span>Tokens reportados</span><strong>{{.Tokens}}</strong></div>
+  <div class="stat"><span>A pagar à CDN</span><strong>{{preco .Total}}</strong></div>
+  <div class="stat"><span>Tarifa por token</span><strong>{{preco .Tarifa}}</strong></div>
+</div>
+{{if .Lista}}
+<div class="tabela">
+<table>
+  <thead><tr><th>Lote</th><th>Recebido em</th><th>Tokens</th><th>Valor</th></tr></thead>
+  <tbody>
+  {{range .Lista}}
+    <tr><td>#{{.ID}}</td><td>{{.Recebido}}</td><td>{{.Quantidade}}</td><td>{{preco .Valor}}</td></tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{else}}
+<p class="nota">Nenhum lote recebido ainda.</p>
+{{end}}
+{{end}}

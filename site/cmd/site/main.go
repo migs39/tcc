@@ -6,6 +6,15 @@
 //	ENDERECO      endereço de escuta (padrão: localhost:8080)
 //	CHAVE_PACOTE  arquivo com a chave Ed25519 do pacote do catálogo (padrão:
 //	              chave_pacote.ed25519; criado se não existir)
+//	OT_HELPER     caminho do binário ot-helper (padrão: ot-helper no PATH)
+//	CDN_URL       endereço da CDN (padrão: http://localhost:8081)
+//	SEGREDO_CDN   segredo compartilhado com a CDN (obrigatório para publicar
+//	              livros e receber o reporte)
+//	CAIXA_SAIDA   pasta onde os e-mails são gravados (padrão: caixa_saida),
+//	              usada quando SMTP_HOST está vazio
+//	SMTP_HOST, SMTP_PORTA (587), SMTP_USUARIO, SMTP_SENHA, SMTP_DE
+//	              envio real de e-mail (D-014)
+//	TARIFA_TOKEN_CENTAVOS  remuneração da CDN por token (padrão: 50, D-014)
 package main
 
 import (
@@ -16,14 +25,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"tcc/site/internal/admin"
 	"tcc/site/internal/catalogo"
+	"tcc/site/internal/compra"
 	"tcc/site/internal/db"
 	"tcc/site/internal/pacote"
 	"tcc/site/web"
+
+	"tcc/protocolo"
 )
 
 const urlPadrao = "postgres://livraria:livraria_dev@localhost:5432/livraria?sslmode=disable"
@@ -72,10 +85,27 @@ func rodar(log *slog.Logger) error {
 			"\nchave pública (embutir no programa local): " + hex.EncodeToString(svcPacote.ChavePublica()) + "\n")
 	}
 
+	segredoCDN := os.Getenv("SEGREDO_CDN")
+	if segredoCDN == "" {
+		os.Stderr.WriteString("aviso: SEGREDO_CDN vazio; publicação de livros e reporte da CDN ficam desativados\n")
+	}
+	var enviador compra.Enviador = compra.CaixaDeSaida{Pasta: getenv("CAIXA_SAIDA", "caixa_saida")}
+	if h := os.Getenv("SMTP_HOST"); h != "" {
+		enviador = compra.SMTP{Host: h, Porta: getenv("SMTP_PORTA", "587"), Usuario: os.Getenv("SMTP_USUARIO"),
+			Senha: os.Getenv("SMTP_SENHA"), De: getenv("SMTP_DE", "livraria@localhost")}
+	}
+	fila := compra.NovaFila(enviador, log)
+	svcCompra := compra.NovoServico(pool, protocolo.OTHelper{Caminho: os.Getenv("OT_HELPER")}, compra.GatewayMock{}, fila,
+		&compra.ClienteCDN{URL: getenv("CDN_URL", "http://localhost:8081"), Segredo: segredoCDN})
+	if v, err := strconv.Atoi(getenv("TARIFA_TOKEN_CENTAVOS", "50")); err == nil && v >= 0 {
+		svcCompra.TarifaToken = v
+	}
+	hCompra := compra.NovosHandlers(svcCompra, hAdmin, segredoCDN, tpl, log)
+
 	srv := &http.Server{
 		Addr: getenv("ENDERECO", "localhost:8080"),
 		Handler: NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(catalogo.NovoServico(pool), hAdmin, tpl, log),
-			pacote.NovosHandlers(svcPacote, tpl, log)),
+			pacote.NovosHandlers(svcPacote, tpl, log), hCompra),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

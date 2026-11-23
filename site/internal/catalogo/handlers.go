@@ -26,6 +26,9 @@ var avisos = map[string]string{
 	"categoria-criada":    "Categoria criada.",
 	"categoria-renomeada": "Categoria renomeada.",
 	"categoria-removida":  "Categoria removida.",
+	"arquivo-publicado":   "Arquivo do livro cifrado e enviado à CDN.",
+	"arquivo-invalido":    "Envie um arquivo não vazio.",
+	"arquivo-falhou":      "Não foi possível enviar o livro à CDN. Confira se ela está no ar.",
 }
 
 type Handlers struct {
