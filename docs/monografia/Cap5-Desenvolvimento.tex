@@ -493,15 +493,17 @@ O binário auxiliar que expõe o libOTe compila no Windows e no Linux, e a
 requisição do receptor é idêntica byte a byte quando gerada com a mesma
 semente, o que confirma a premissa da execução síncrona com semente.
 
-A \autoref{fig:janela} mostra a janela do programa local durante a escolha:
-o catálogo é navegado no computador do cliente, e a barra de compra lembra o
-que o sistema web vai saber, o grupo, a quantidade e o e-mail. A
+A \autoref{fig:janela} mostra a janela do programa local: o catálogo,
+com as capas e os grupos de mesmo preço, é navegado e pesquisado no computador
+do cliente, e o rodapé indica a versão do pacote e que sua assinatura foi
+conferida. Ao escolher livros, uma barra lembra o que o sistema web vai saber:
+o grupo, a quantidade e o e-mail. A
 \autoref{fig:pagina} mostra a página pública do sistema web, que é a mesma
 para todos os visitantes.
 
 \begin{figure}[htbp]
 \centering
-\caption{Janela do programa local: catálogo com dois livros escolhidos}\label{fig:janela}
+\caption{Janela do programa local: catálogo navegado no computador do cliente}\label{fig:janela}
 \includegraphics[width=\textwidth]{figuras/janela-catalogo.jpg}
 \fonte{Elaborado pelos autores.}
 \end{figure}
@@ -667,7 +669,9 @@ T24 & RF18 & Um reporte sem o segredo da CDN é recusado. \\
 
 As miniaturas de capa, de 200 por 300 pixels em JPEG, mediram de 1,6~KB (capa
 de cor lisa) a 19,8~KB (pior caso, imagem de ruído aleatório). Com mil livros,
-o pacote do catálogo fica abaixo de cerca de 20~MB. A requisição do OT tem
+o pacote do catálogo fica abaixo de cerca de 20~MB. No catálogo de
+demonstração, com 12 livros e capas tipográficas geradas a partir do título e
+do autor, cada miniatura tem de 6 a 7~KB, e o pacote inteiro, 80~KB. A requisição do OT tem
 1.256 bytes para 19 OTs, e a resposta do \emph{sender}, 64 bytes, mais as
 cifras de Naor--Pinkas.
 

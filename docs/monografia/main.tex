@@ -290,7 +290,8 @@
 % Folha de rosto
 % (o * indica que haverá a ficha bibliográfica)
 % ---
-\imprimirfolhaderosto*
+% Sem * enquanto não houver a ficha catalográfica oficial (ver abaixo).
+\imprimirfolhaderosto
 % ---
 
 % ---
@@ -310,34 +311,37 @@
 %     \includepdf{ficha.pdf}
 % \end{fichacatalografica}
 
-\begin{fichacatalografica}
-	\sffamily
-	\vspace*{\fill}					% Posição vertical
-	\begin{center}					% Minipage Centralizado
-	\fbox{\begin{minipage}[c][8cm]{13.5cm}		% Largura
-	\small
-	Garcia, João Paulo
-	
-	\hspace{0.5cm} \imprimirtitulo~/ João Paulo Garcia, João Pedro Magalhães, Miguel Luis Schwengber. --
-	\imprimirlocal, \imprimirdata-
-	
-	\hspace{0.5cm} \thelastpage p. : il. (algumas color.) ; 30 cm.\\
-	
-	\hspace{0.5cm} \imprimirorientadorRotulo~\imprimirorientador\\
-	
-	\hspace{0.5cm}
-	\parbox[t]{\textwidth}{\imprimirtipotrabalho~--~\imprimirinstituicao,
-	\imprimirdata.}\\
-	
-	\hspace{0.5cm}
-		1. Transferência inconsciente.
-		2. Privacidade.
-		3. Assinatura cega.
-		I. Universidade de São Paulo. Escola Politécnica. Departamento de Engenharia de Computação e Sistemas Digitais.
-		II. t. 			
-	\end{minipage}}
-	\end{center}
-\end{fichacatalografica}
+% Ficha de exemplo do modelo, retirada da versão de entrega: a oficial é
+% gerada pela biblioteca da Poli. Quando houver o PDF, use o bloco com
+% \includepdf acima e volte o * em \imprimirfolhaderosto.
+% \begin{fichacatalografica}
+% 	\sffamily
+% 	\vspace*{\fill}					% Posição vertical
+% 	\begin{center}					% Minipage Centralizado
+% 	\fbox{\begin{minipage}[c][8cm]{13.5cm}		% Largura
+% 	\small
+% 	Garcia, João Paulo
+% 	
+% 	\hspace{0.5cm} \imprimirtitulo~/ João Paulo Garcia, João Pedro Magalhães, Miguel Luis Schwengber. --
+% 	\imprimirlocal, \imprimirdata-
+% 	
+% 	\hspace{0.5cm} \thelastpage p. : il. (algumas color.) ; 30 cm.\\
+% 	
+% 	\hspace{0.5cm} \imprimirorientadorRotulo~\imprimirorientador\\
+% 	
+% 	\hspace{0.5cm}
+% 	\parbox[t]{\textwidth}{\imprimirtipotrabalho~--~\imprimirinstituicao,
+% 	\imprimirdata.}\\
+% 	
+% 	\hspace{0.5cm}
+% 		1. Transferência inconsciente.
+% 		2. Privacidade.
+% 		3. Assinatura cega.
+% 		I. Universidade de São Paulo. Escola Politécnica. Departamento de Engenharia de Computação e Sistemas Digitais.
+% 		II. t. 			
+% 	\end{minipage}}
+% 	\end{center}
+% \end{fichacatalografica}
 \cleardoublepage % o resumo começa em folha própria (anverso)
 % ---
 
