@@ -16,11 +16,17 @@ set CLIENTE_URL=https://github.com/migs39/tcc/releases/latest/download/LivrariaO
 if exist "%RAIZ%\bin\LivrariaOT-cliente.zip" for /f %%H in ('powershell -NoProfile -Command "(Get-FileHash '%RAIZ%\bin\LivrariaOT-cliente.zip').Hash"') do set CLIENTE_SHA256=%%H
 cd /d "%RAIZ%"
 docker compose up -d --wait
-start "Livraria OT - site" /d "%RAIZ%\site" cmd /k "set OT_HELPER=%RAIZ%\bin\ot-helper.exe&& %RAIZ%\bin\site.exe"
+rem Site e CDN rodam em segundo plano, sem janela; o que escrevem vai para
+rem bin\logs\. Uma execucao anterior e encerrada antes (portas 8080 e 8081).
+taskkill /f /im site.exe >nul 2>&1
+taskkill /f /im cdn.exe >nul 2>&1
+if not exist "%RAIZ%\bin\logs" mkdir "%RAIZ%\bin\logs"
+set OT_HELPER=%RAIZ%\bin\ot-helper.exe
+set CHAVE_PACOTE_PUB=%CHAVE%
+powershell -NoProfile -Command "Start-Process -FilePath '%RAIZ%\bin\site.exe' -WorkingDirectory '%RAIZ%\site' -WindowStyle Hidden -RedirectStandardOutput '%RAIZ%\bin\logs\site.out.log' -RedirectStandardError '%RAIZ%\bin\logs\site.log'"
 timeout /t 3 /nobreak >nul
-start "Livraria OT - CDN" /d "%RAIZ%\cdn" cmd /k "set CHAVE_PACOTE_PUB=%CHAVE%&& %RAIZ%\bin\cdn.exe"
+powershell -NoProfile -Command "Start-Process -FilePath '%RAIZ%\bin\cdn.exe' -WorkingDirectory '%RAIZ%\cdn' -WindowStyle Hidden -RedirectStandardOutput '%RAIZ%\bin\logs\cdn.out.log' -RedirectStandardError '%RAIZ%\bin\logs\cdn.log'"
 timeout /t 2 /nobreak >nul
 start "" "%RAIZ%\bin\Livraria OT.exe"
 start "" http://localhost:8080/
-echo Site: http://localhost:8080  ^|  Admin: http://localhost:8080/admin/  ^|  CDN: http://localhost:8081/painel (usuario qualquer, senha em bin\segredo_cdn.txt)
-echo Acesso pela internet: rode abrir_acesso_publico.bat
+rem Sem pause: a janela deste script fecha sozinha. Para parar: parar_demo.bat.
