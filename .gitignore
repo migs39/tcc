@@ -11,6 +11,40 @@ docs/especificacao/*.fls
 docs/especificacao/*.fdb_latexmk
 docs/especificacao/*.synctex.gz
 docs/especificacao/especificacao.pdf
+docs/monografia/*.aux
+docs/monografia/*.log
+docs/monografia/*.toc
+docs/monografia/*.out
+docs/monografia/*.bbl
+docs/monografia/*.blg
+docs/monografia/*.brf
+docs/monografia/*.idx
+docs/monografia/*.ilg
+docs/monografia/*.ind
+docs/monografia/*.lof
+docs/monografia/*.lot
+docs/monografia/*.loq
+docs/monografia/*.fls
+docs/monografia/*.fdb_latexmk
+docs/monografia/*.synctex.gz
+docs/monografia/main.pdf
 
 # Chave privada que assina o pacote do catálogo (D-006); nunca versionar
 *.ed25519
+
+# Binário auxiliar do OT: build e dependências (libOTe) locais
+ot-helper/build/
+ot-helper/deps/
+
+# Saídas locais de desenvolvimento
+caixa_saida/
+livros_cifrados/
+*.exe
+
+# Executáveis gerados para a demonstração
+bin/
+
+# Pasta de trabalho: credencial da demo, logs e PDF compilado ficam fora
+Claude outputs/demo_admin.txt
+Claude outputs/*.log
+Claude outputs/*.pdf

@@ -1,0 +1,225 @@
+\chapter{Aspectos Conceituais}\label{cap:conceitos}
+% ===========================================================================
+
+\section{Oblivious Transfer (OT)}
+
+\subsection{Definição}
+
+Oblivious Transfer (OT) é um protocolo criptográfico entre duas partes:
+
+\begin{itemize}
+\item \emph{Sender} $S$, que possui um conjunto de mensagens
+$X = \{x_0, x_1, \ldots, x_{n-1}\}$;
+\item \emph{Receiver} $R$, que escolhe um índice $i \in \{0, \ldots, n-1\}$.
+\end{itemize}
+
+O protocolo garante que:
+
+\begin{enumerate}
+\item $R$ aprende apenas $x_i$;
+\item $R$ não aprende nenhuma informação sobre $x_j$ para $j \neq i$;
+\item $S$ não aprende qual índice $i$ foi escolhido.
+\end{enumerate}
+
+Formalmente, o objetivo é realizar:
+\[
+(x_0, \ldots, x_{n-1}),\ i \longrightarrow x_i
+\]
+sem violar as propriedades de privacidade.
+
+\section{Variantes de OT}
+
+\subsection{1-out-of-2 OT}
+
+O caso mais simples ocorre quando o \emph{sender} possui duas mensagens:
+\[
+(x_0, x_1)
+\]
+O \emph{receiver} escolhe um bit:
+\[
+r \in \{0, 1\}
+\]
+Ao final do protocolo, o \emph{receiver} obtém:
+\[
+x_r
+\]
+sem aprender $x_{1-r}$, e o \emph{sender} não descobre o valor de $r$.
+
+\subsection{1-out-of-n OT}
+
+Generalização do caso anterior:
+
+\begin{itemize}
+\item \emph{Sender} possui $n$ mensagens;
+\item \emph{Receiver} escolhe um índice $i \in \{0, \ldots, n-1\}$;
+\end{itemize}
+
+O \emph{receiver} obtém apenas $x_i$, mantendo as mesmas garantias de
+privacidade.
+
+\subsection{k-out-of-n OT}
+
+Nesta variante:
+
+\begin{itemize}
+\item \emph{Sender} possui $n$ mensagens;
+\item \emph{Receiver} escolhe um subconjunto $I \subseteq \{0, \ldots, n-1\}$
+tal que $|I| = k$.
+\end{itemize}
+
+O \emph{receiver} aprende:
+\[
+\{x_i : i \in I\}
+\]
+sem obter informação sobre as demais mensagens.
+
+\subsection{Generalized Oblivious Transfer (GOT)}
+
+O Generalized Oblivious Transfer (GOT) é uma generalização do Oblivious
+Transfer tradicional, introduzida por Ishai e Kushilevitz.
+\cite{tassa2011}
+
+\subsection{Definição}
+
+Seja Alice portadora de um conjunto de mensagens
+\[
+M = \{M_1, M_2, \ldots, M_n\}.
+\]
+
+Seja $[n] = \{1, 2, \ldots, n\}$ o conjunto de índices.
+
+Define-se uma coleção $\mathcal{A} \subseteq 2^{[n]}$ de subconjuntos
+permitidos, chamada de coleção monotônica decrescente, isto é,
+\[
+S \in \mathcal{A} \text{ e } S' \subseteq S \implies S' \in \mathcal{A}.
+\]
+
+\subsection{Funcionalidade}
+
+Bob escolhe um subconjunto $S \subseteq [n]$ tal que $S \in \mathcal{A}$. Ao
+final do protocolo:
+
+\begin{itemize}
+\item Bob aprende exatamente as mensagens $\{M_i\}_{i \in S}$;
+\item Bob não aprende nenhuma informação sobre $\{M_i\}_{i \notin S}$;
+\item Alice não aprende nenhuma informação sobre o subconjunto $S$ escolhido
+por Bob.
+\end{itemize}
+
+\subsection{Relação com OT Clássico}
+
+\begin{itemize}
+\item No 1-out-of-n OT:
+\[ \mathcal{A} = \{S \subseteq [n] \mid |S| = 1\}. \]
+\item No k-out-of-n OT:
+\[ \mathcal{A} = \{S \subseteq [n] \mid |S| = k\}. \]
+\item No GOT:
+\[ \mathcal{A} \subseteq 2^{[n]} \]
+pode ser qualquer coleção monotônica decrescente.
+\end{itemize}
+
+\subsection{Interpretação}
+
+O GOT permite especificar políticas arbitrárias de acesso, desde que sejam
+fechadas por inclusão (monotonicidade decrescente). Por exemplo:
+
+\begin{itemize}
+\item todos os subconjuntos de tamanho $\leq k$;
+\item qualquer subconjunto que não contenha simultaneamente dois índices
+específicos;
+\item qualquer subconjunto contido em um conjunto autorizado $T$.
+\end{itemize}
+
+\subsection{Implementação}
+
+Ishai e Kushilevitz mostraram que o GOT pode ser implementado a partir de
+múltiplas execuções paralelas de protocolos 1-out-of-2 OT.
+
+\section{OT Extension}
+
+Executar muitos OTs base (baseados em criptografia de chave pública) é
+computacionalmente custoso.
+
+A técnica de OT Extension permite:
+
+\begin{enumerate}
+\item Executar um pequeno número de OTs base;
+\item Expandir para milhares ou milhões de OTs usando apenas criptografia
+simétrica.
+\end{enumerate}
+
+Isso reduz drasticamente o custo computacional, tornando prática a computação segura multipartidária (\emph{Secure Multi-Party Computation} -- MPC).
+
+\section{Criptossistema de Rabin}
+
+O criptossistema de Rabin é uma família de esquemas de criptografia de chave
+pública baseada em uma função armadilha cuja segurança, assim como a do RSA (Rivest--Shamir--Adleman),
+está relacionada à dificuldade da fatoração de inteiros.
+
+A função armadilha de Rabin tem a vantagem de que inverter essa função foi
+matematicamente provado ser tão difícil quanto fatorar inteiros, enquanto não
+há prova semelhante conhecida para a função armadilha do RSA. Ela tem a
+desvantagem de que cada saída da função de Rabin pode ser gerada por qualquer
+uma de quatro entradas possíveis; se cada saída for um texto cifrado, é
+necessária complexidade adicional na decriptação para identificar qual das
+quatro entradas possíveis era o texto plano verdadeiro. Tentativas ingênuas de
+contornar esse problema frequentemente possibilitam um ataque de texto cifrado
+escolhido para recuperar a chave secreta ou, ao codificar redundância no
+espaço do texto plano, invalidam a prova de segurança em relação à fatoração.
+
+Esquemas de criptografia de chave pública baseados na função armadilha de
+Rabin são usados principalmente como exemplos em livros-texto. Em contraste, o
+RSA é a base de esquemas padrão de criptografia de chave pública, como o
+RSAES-PKCS1-v1\_5 e o RSAES-OAEP, que são amplamente utilizados na prática.
+\cite{rabin2005}
+
+\subsection{Definição}
+
+Sejam $p$ e $q$ primos grandes, escolhidos de forma que
+\[
+p \equiv q \equiv 3 \pmod{4},
+\]
+e:
+\[
+n = p \cdot q
+\]
+Uma mensagem $M$ é convertida em um número:
+\[
+m < n
+\]
+A encriptação é definida como:
+\[
+c = m^2 \bmod n
+\]
+O \emph{ciphertext} é $c$.
+
+A mensagem $m$ pode ser recuperada a partir do texto cifrado $c$ calculando
+sua raiz quadrada módulo $n$, como segue.
+
+Calcule a raiz quadrada de $c$ módulo $p$ e módulo $q$ utilizando as
+seguintes fórmulas:
+\begin{align*}
+m_p &= c^{\frac{1}{4}(p+1)} \bmod p \\
+m_q &= c^{\frac{1}{4}(q+1)} \bmod q
+\end{align*}
+Essas fórmulas só são válidas porque $p \equiv q \equiv 3 \pmod 4$: nesse
+caso $\frac{1}{4}(p+1)$ e $\frac{1}{4}(q+1)$ são inteiros e, pelo critério de
+Euler, $m_p^2 \equiv c \pmod p$ e $m_q^2 \equiv c \pmod q$. Por isso a geração
+de chaves deve impor essa condição.
+
+Utilize o algoritmo de Euclides estendido para encontrar $y_p$ e $y_q$ tais
+que:
+\[
+y_p \cdot p + y_q \cdot q = 1.
+\]
+Aplique o Teorema Chinês do Resto para encontrar as quatro raízes quadradas de
+$c$ módulo $n$:
+\begin{align*}
+r_1 &= (y_p \cdot p \cdot m_q + y_q \cdot q \cdot m_p) \bmod n \\
+r_2 &= n - r_1 \\
+r_3 &= (y_p \cdot p \cdot m_q - y_q \cdot q \cdot m_p) \bmod n \\
+r_4 &= n - r_3
+\end{align*}
+
+Um desses quatro valores é o texto plano original $m$, embora não seja
+possível determinar qual deles é o correto sem informação adicional.

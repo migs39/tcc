@@ -1,0 +1,76 @@
+\chapter{Método do Trabalho}\label{cap:metodo}
+% ===========================================================================
+
+Este capítulo descreve o processo adotado para desenvolver o projeto, cujo
+objetivo é implementar um protótipo de livraria digital com preservação de
+privacidade por meio de Oblivious Transfer (OT). O método foi estruturado em
+fases de forma a manter alinhamento com os objetivos definidos no \autoref{cap:introducao}.
+
+\section{Visão Geral do Processo}
+
+O processo de desenvolvimento foi organizado em seis fases principais:
+fundamentação teórica, especificação de requisitos, projeto da solução,
+implementação do protótipo, testes e avaliação, e consolidação dos resultados.
+
+\section{Fase 1 --- Fundamentação Teórica}
+
+Na primeira fase, foram estudados os conceitos criptográficos necessários para
+o projeto, com ênfase em OT e suas variantes (como 1-out-of-n e GOT), além de
+técnicas relacionadas, como OT Extension e fundamentos do criptossistema de
+Rabin. Essa etapa forneceu base para as decisões arquiteturais e para a
+definição dos limites de segurança do protótipo \cite{rabin2005, tassa2011}.
+
+\section{Fase 2 --- Especificação de Requisitos}
+
+Com base nos objetivos do trabalho, foi conduzida a elicitação e organização
+dos requisitos funcionais e não funcionais do sistema. Essa fase formaliza o
+que a solução deve fazer e quais restrições de desempenho, segurança e
+usabilidade devem ser atendidas. O detalhamento dessa etapa é apresentado no
+\autoref{cap:especificacao}.
+
+\section{Fase 3 --- Projeto da Solução}
+
+Após a definição dos requisitos, pretende-se fazer o projeto com uma
+arquitetura inicial de referência. Os objetivos iniciais do projeto são:
+organização em três componentes (sistema web, CDN e programa local), modelagem
+preliminar do fluxo de compra privada, alternativas de agrupamento de itens
+por faixa de preço e possíveis formatos de artefatos de criptografia enviados.
+Nessa etapa, os critérios de separação entre as operações do sistema web e as
+operações locais do cliente serão definidos conforme os resultados parciais. O
+detalhamento dessa etapa é apresentado no \autoref{cap:desenvolvimento}.
+
+\section{Fase 4 --- Implementação Incremental}
+
+A implementação deve ser conduzida em incrementos. A sequência abaixo
+representa uma proposta inicial, passível de ajustes durante o
+desenvolvimento:
+
+\begin{itemize}
+\item estrutura de catálogo e cadastro de itens;
+\item fluxo de compra com coleta mínima de dados do cliente;
+\item execução do mecanismo criptográfico associado à escolha privada;
+\item emissão de tokens com assinatura cega e entrega do conteúdo cifrado pela
+CDN;
+\item suporte ao processo de recuperação local dos itens adquiridos.
+\end{itemize}
+
+Esse encadeamento foi definido como estratégia de partida e poderá ser
+reordenado caso surjam problemas técnicos ou necessidades de validação não
+previstas. O detalhamento dessa etapa é apresentado no \autoref{cap:desenvolvimento}.
+
+\section{Fase 5 --- Testes e Avaliação}
+
+Na fase de avaliação, pretende-se priorizar três questões: (i) eficácia do
+sistema, com foco no atendimento aos requisitos; (ii) nível de privacidade,
+buscando provas de que o servidor não infere a escolha específica do cliente;
+e (iii) desempenho, com medições de tempo de busca, compra e entrega. Os
+procedimentos exatos de teste e o recorte final de métricas serão definidos ao
+longo da implementação e posteriormente descritos no \autoref{cap:desenvolvimento}.
+
+\section{Fase 6 --- Consolidação e Análise Final}
+
+Na etapa final, pretende-se consolidar os resultados alcançados e analisá-los
+com os objetivos do projeto, dando ênfase nas limitações observadas,
+contribuições efetivas e possibilidades de continuidade. O nível de
+profundidade dessa análise dependerá do que for possível concluir nas etapas
+anteriores e será apresentado no capítulo de considerações finais.

@@ -1,0 +1,95 @@
+\chapter{Introdução}\label{cap:introducao}
+% ===========================================================================
+
+Este documento apresenta o projeto de formatura intitulado ``Aplicação de
+Protocolos de Oblivious Transfer para Preservação de Privacidade em Transações
+Digitais''.
+
+\section{Motivação}
+
+No cenário atual do comércio eletrônico, a coleta massiva de dados se tornou
+uma prática recorrente, de forma que qualquer compra torna a navegação pela
+internet uma experiência infestada de anúncios de produtos relacionados.
+Embora a vantagem de marketing dessa prática seja inegável, fornecer para os
+consumidores a privacidade que a maioria das lojas virtuais atualmente viola é
+um aspecto de grande interesse e necessidade para a sociedade.
+
+A literatura de economia da privacidade descreve como as informações pessoais
+geradas em transações \emph{online} passaram a ter valor comercial próprio e
+como o consumidor perde o controle sobre quem as usa e com que finalidade
+\cite{acquisti2016}. No Brasil, a Lei Geral de Proteção de Dados Pessoais
+disciplina o tratamento desses dados \cite{lgpd2018}, mas a própria execução de
+uma compra é base legal para esse tratamento: a loja continua sabendo o que
+cada cliente comprou.
+
+A criptografia oferece ferramentas para que a transação aconteça sem que essa
+informação chegue ao vendedor. As assinaturas cegas, propostas por
+\citeonline{chaum1983} para pagamentos eletrônicos não rastreáveis, permitem
+que uma parte assine um valor sem conhecer seu conteúdo. Os protocolos de
+transferência inconsciente (\emph{Oblivious Transfer} -- OT), introduzidos por
+\citeonline{rabin2005}, permitem que um receptor obtenha um entre vários itens
+sem que o emissor saiba qual. \citeonline{aiello2001} aplicaram o OT
+diretamente à venda de bens digitais, com o OT com preço (\emph{priced
+oblivious transfer}), em que o comprador paga e recebe itens sem que o
+vendedor saiba quais foram escolhidos. Trabalhos posteriores estenderam a
+ideia para escolhas adaptativas, feitas uma após a outra \cite{camenisch2007},
+e para bases de dados em que cada registro tem a sua própria política de
+acesso \cite{camenisch2009}.
+
+\section{Objetivos}
+
+\textbf{Objetivo Geral:} Desenvolver um protótipo funcional de um sistema de
+venda de ativos digitais em formato de catálogo, utilizando criptografia
+baseada em \emph{Oblivious Transfer} (OT, Transferência Inconsciente) para passar chaves
+de criptografia simétrica usadas para descriptografar os bens digitais
+adquiridos de Rede de Distribuição de Conteúdo (Content Delivery Network --
+CDN), garantindo que o servidor da loja seja incapaz de identificar quais
+produtos foram acessados ou adquiridos por um comprador específico.
+
+\textbf{Objetivos Específicos:}
+
+\begin{itemize}
+\item Modelar a arquitetura do sistema para permitir a transação segura onde a
+escolha do cliente é ofuscada para o servidor.
+\item Implementar o algoritmo criptográfico escolhido (como 1-out-of-N) em uma
+solução com 3 componentes: site online, rede de distribuição de conteúdo (CDN)
+e programa local instalado no computador do cliente.
+\item Desenvolver mecanismos para validar a legitimidade da transação sem
+revelar o conteúdo da compra.
+\item Realizar testes de segurança e desempenho para validar a impossibilidade
+de rastreamento de preferências.
+\end{itemize}
+
+\section{Justificativa}
+
+O projeto propõe uma solução técnica para um problema crescente de privacidade
+digital. O sistema permitirá que o comprador adquira produtos digitais dentre
+várias opções, tendo acesso a apenas uma, mas de forma que o vendedor
+permaneça matematicamente incapaz de saber qual item específico foi
+selecionado pelo cliente.
+
+A metodologia envolverá a implementação de algoritmos de Oblivious Transfer
+integrados a uma interface de venda, garantindo que a loja receba o pagamento,
+mas não consiga registrar históricos de compras, preferências ou interesses do
+usuário, assegurando assim um elevado nível de privacidade para os
+consumidores.
+
+Os trabalhos de \citeonline{aiello2001}, \citeonline{camenisch2007} e
+\citeonline{camenisch2009} concentram-se nos protocolos e em suas provas de
+segurança. Este trabalho integra o OT a um fluxo de compra completo, com
+pagamento por \emph{gateway}, distribuição dos livros cifrados por uma CDN e
+remuneração da CDN por meio de tokens com assinatura cega \cite{chaum1983}, e
+avalia o resultado contra requisitos de desempenho e de privacidade. Adota,
+ainda, uma simplificação de engenharia: em vez de esconder o preço de cada
+item, como no OT com preço, agrupa os livros por preço e cobra pelo grupo e
+pela quantidade de itens.
+
+\section{Organização do Trabalho}
+
+Este documento está estruturado da seguinte forma: o \autoref{cap:conceitos}
+apresenta os conceitos fundamentais que embasam o projeto. O
+\autoref{cap:metodo} descreve o método do trabalho e suas fases. O
+\autoref{cap:especificacao} define os requisitos do sistema, o modelo de
+ameaça e os casos de uso. O \autoref{cap:desenvolvimento} apresenta as
+tecnologias utilizadas, o projeto e a implementação da solução e os testes
+realizados.

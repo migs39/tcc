@@ -1,0 +1,529 @@
+% ===========================================================================
+\chapter{Desenvolvimento do Trabalho}\label{cap:desenvolvimento}
+% ===========================================================================
+
+Este capítulo apresenta a transformação dos requisitos do
+\autoref{cap:especificacao} no produto: as tecnologias utilizadas, o projeto e
+a implementação da solução, com as decisões tomadas e as alternativas
+descartadas, e os testes e a avaliação. As fases 4 e 5 do método ainda estão
+em andamento, e o capítulo registra o estado em que se encontram.
+
+\section{Tecnologias Utilizadas}\label{sec:tecnologias}
+
+Esta seção compara, para cada decisão de projeto, a alternativa escolhida com
+as descartadas, usando os mesmos critérios para todas. A comparação é
+qualitativa: registra propriedades verificadas no código-fonte ou na
+documentação de cada alternativa e marca como ``não verificado'' o que não foi
+confirmado.
+
+\subsection{Biblioteca de OT}
+
+Critérios:
+(C1) compatibilidade com o fluxo de compra, em que o programa local envia a
+requisição e o sistema web responde em uma única mensagem;
+(C2) possibilidade de guardar ou reproduzir o estado do receptor entre a
+requisição e a extração das chaves (RF11, RF14);
+(C3) execução no Windows, ambiente do programa local;
+(C4) maturidade e recomendação de uso pelos autores;
+(C5) aderência ao foco do trabalho, que é o uso de protocolos de OT.
+
+\begin{table}[H]
+\centering
+\caption{Comparativo das bibliotecas de OT avaliadas}\label{tab:comp-libs}
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.13\textwidth}
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{0.11\textwidth} >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{0.11\textwidth}@{}}
+\toprule
+\textbf{Alternativa} & \textbf{C1 -- Mensagens} & \textbf{C2 -- Estado do receptor} &
+\textbf{C3 -- Windows} & \textbf{C4 -- Maturidade} & \textbf{Resultado} \\
+\midrule
+libOTe, OT base de \citeonline{masnyrindal2019} &
+Compatível: a requisição do receptor não depende da mensagem do \emph{sender},
+que segue na resposta &
+Em memória, mas reproduzível: toda a aleatoriedade do receptor vem do gerador
+recebido como parâmetro (verificado no código) &
+Sim, segundo os autores &
+Acadêmica, licença MIT, amplamente citada &
+\textbf{Escolhida} \\
+\addlinespace
+emp-ot, protocolo PVW &
+Compatível: receptor envia primeiro, duas mensagens &
+Em memória, chamada bloqueante; reprodutibilidade não verificada &
+\textbf{Não} (apenas Linux e macOS) &
+Software de pesquisa, sem auditoria independente, segundo os autores &
+Descartada (C3) \\
+\addlinespace
+circl, Simplest OT &
+Exige uma troca adicional: a requisição do receptor depende da mensagem inicial
+do \emph{sender} &
+API dividida em rodadas, favorável &
+Sim &
+Apenas 1-out-of-2; pacote fora da versão mais recente do módulo &
+Descartada (C1, C4) \\
+\addlinespace
+mpz, Chou--Orlandi &
+Mesma dependência da mensagem inicial do \emph{sender} (protocolo Chou--Orlandi) &
+Favorável: máquinas de estado sem rede, com mensagens explícitas &
+Não verificado &
+Autores recomendam não usar em produção; mudanças incompatíveis frequentes &
+Descartada (C4) \\
+\addlinespace
+swanky (Naor--Pinkas, Chou--Orlandi) &
+Não verificado &
+Não verificado &
+Não verificado &
+Autores recomendam não usar em produção &
+Descartada (C4) \\
+\addlinespace
+OPRF (RFC 9497) usado para construir 1-out-of-n &
+Compatível: cliente envia primeiro, duas mensagens &
+API em passos, favorável &
+Sim &
+Padronizado, várias implementações independentes &
+Descartada (C5) \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores a partir da documentação e do código-fonte das bibliotecas.}
+\end{table}
+
+A alternativa baseada em função pseudoaleatória oblívia (\emph{Oblivious Pseudorandom Function} -- OPRF), padronizada no documento RFC (\emph{Request for Comments}) 9497, é tecnicamente adequada, mas não é um protocolo
+de OT: ela obtém a funcionalidade de 1-out-of-n a partir de uma função
+pseudoaleatória avaliada obliviamente, o que deslocaria o foco do trabalho.
+
+
+\subsection{Tecnologias do sistema web}
+
+\begin{table}[H]
+\centering
+\caption{Comparativo das tecnologias do sistema web}\label{tab:comp-stack}
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.14\textwidth}
+  >{\raggedright\arraybackslash}p{0.2\textwidth} >{\raggedright\arraybackslash}p{0.2\textwidth}
+  >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Tema} & \textbf{Escolhida} & \textbf{Descartada} & \textbf{Motivo} \\
+\midrule
+Linguagem & Go & TypeScript (Node.js); Python &
+Go oferece assinatura cega RSA padronizada \cite{rfc9474} em biblioteca
+mantida, biblioteca padrão com servidor HTTP (\emph{Hypertext Transfer Protocol}) e criptografia, e binário único.
+Em Python não foi identificada implementação consolidada da RFC 9474. \\
+\addlinespace
+Banco de dados & PostgreSQL & SQLite &
+Escritas concorrentes representativas para o teste de carga (RNF05). \\
+\addlinespace
+Interface & HTML (\emph{HyperText Markup Language}) gerado no servidor & Aplicação de página única (SPA) &
+Menor superfície de ataque e nenhuma dependência de código de terceiros no
+navegador. \\
+\addlinespace
+Busca (RF04) & Pacote completo, navegado no programa local & Vitrine no
+navegador com filtro local; busca no servidor sem registros &
+Na vitrine no navegador, o filtro é código fornecido pelo sistema web, e a
+proteção dependeria de ele ser honesto; na busca no servidor, o sistema web
+observa as consultas e a proteção dependeria apenas de disciplina
+operacional. \\
+\addlinespace
+Acesso à biblioteca de OT & Binário auxiliar & Ligação direta ao código C++ &
+Isola o código C++ e desacopla a compilação da biblioteca da compilação do
+sistema web. \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+
+\section{Projeto e Implementação}\label{sec:projeto}
+
+\subsection{Visão geral da solução}
+
+A partir dos requisitos, a ideia inicial do projeto é uma plataforma de venda
+de chaves de livros criptografados, que são distribuídos por uma CDN. A
+solução é composta por três componentes:
+
+\begin{enumerate}
+\item \textbf{Sistema web (site):} administração e publicação do catálogo,
+preços discretos, pagamento via gateway, execução do OT e assinatura cega de
+tokens. A compra não exige conta; apenas o e-mail é solicitado.
+
+\item \textbf{CDN:} armazena os livros cifrados e entrega um livro mediante um
+token com assinatura cega válido. Posteriormente, reporta ao site os tokens
+utilizados para ser remunerada.
+
+\item \textbf{Programa local:} instalado no computador do cliente, baixa o
+catálogo completo e permite buscar e navegar localmente, gera a requisição de
+OT e guarda seu segredo, comunica-se com o sistema web e com a CDN, remove o
+cegamento dos tokens e descriptografa os livros localmente.
+\end{enumerate}
+
+No fluxo de compra, o cliente escolhe um grupo de livros de mesmo preço e
+obtém, por meio do OT, as chaves de N itens desse grupo, sem que o site saiba
+quais foram escolhidos. O cliente recebe também N tokens com assinatura cega,
+com os quais baixa os livros cifrados na CDN, e em seguida os descriptografa
+localmente. Como cada download consome um token e a CDN reporta os tokens
+utilizados, torna-se possível a remuneração justa da CDN sem revelar ao site
+quais livros foram adquiridos.
+
+A execução do OT é síncrona: durante a compra, o programa local envia a
+requisição de OT e recebe a resposta em uma única troca de mensagens com o
+sistema web, dentro do limite de RNF03. Toda a aleatoriedade do lado receptor
+é derivada de uma semente guardada pelo programa local (RF11); por isso, se a
+compra for interrompida após o pagamento, o programa reproduz o estado do
+receptor a partir da semente e extrai as chaves usando a resposta do OT
+recebida por e-mail (RF14). Esse desenho exige um protocolo de OT em que o
+sistema web responda em uma única mensagem e em que o estado do receptor seja
+reproduzível a partir da semente.
+
+Os livros de um grupo de mesmo preço são organizados em versões imutáveis: a
+inclusão, remoção ou alteração de preço de um livro gera uma nova versão do
+grupo, e cada compra referencia a versão sobre a qual os índices do OT foram
+escolhidos.
+
+
+\subsection{Decisões de projeto}
+
+\begin{itemize}
+\item \textbf{Execução do OT:} síncrona na compra, com o estado do receptor
+reproduzível a partir de uma semente guardada pelo programa local (RF11,
+RF14).
+
+\item \textbf{Biblioteca de OT:} libOTe \cite{libote}, com o protocolo de
+\citeonline{masnyrindal2019} como OT base 1-out-of-2. A compilação no ambiente
+do cliente e a reprodutibilidade do receptor a partir da semente são
+verificadas por testes automatizados durante a implementação.
+
+\item \textbf{Sistema web:} linguagem Go, banco PostgreSQL, páginas de
+administração renderizadas no servidor, sem recursos de terceiros; catálogo
+publicado como pacote completo, sem vitrine pública; biblioteca de OT acessada
+por um binário auxiliar. A única página pública é a de apresentação e
+download, sem cookies, scripts ou recursos de terceiros, que exibe a versão,
+o resumo SHA-256 (\emph{Secure Hash Algorithm}) e a chave pública do catálogo atual para que qualquer pessoa
+possa conferi-los.
+
+\item \textbf{Navegação e busca:} no programa local, sobre o pacote completo
+do catálogo. As capas seguem no pacote como miniaturas de 200 por 300 pixels em
+JPEG (\emph{Joint Photographic Experts Group}), geradas no envio da capa, para que o tamanho do pacote não dependa das
+imagens originais.
+
+\item \textbf{Pacote do catálogo:} um arquivo ZIP único por versão, com os
+metadados em JSON (\emph{JavaScript Object Notation}) e as miniaturas. O arquivo é gerado de forma
+determinística, de modo que o mesmo conteúdo produz sempre os mesmos bytes e o
+resumo SHA-256 identifica a versão. O programa local sempre baixa o pacote
+completo, revalidando-o pelo resumo, para que todos os clientes façam a mesma
+requisição. O sistema web assina cada versão com Ed25519 e publica versão,
+resumo e assinatura, o que permite a qualquer pessoa verificar que recebeu o
+mesmo catálogo que os demais. O programa local confere a assinatura com a
+chave pública embutida e recusa versões anteriores à que já possui.
+
+\item \textbf{Assinatura cega:} RSA cego padronizado \cite{rfc9474}, com
+módulo de 3072 bits (RNF01) e uma chave por faixa de preço. A chave pública de
+cada faixa vai no pacote assinado do catálogo, de modo que todos os clientes e
+a CDN recebem a mesma chave e o sistema web não consegue reconhecer os tokens
+de um cliente específico.
+
+\item \textbf{Variante de OT:} o OT 1-out-of-n de \citeonline{naorpinkas1999},
+repetido N vezes. Cada execução usa $\lceil \log_2 n \rceil$ OTs 1-out-of-2 do
+MR19. A chave do livro de índice $i$ é cifrada com um resumo SHA-256 das chaves
+dos OTs correspondentes aos bits de $i$. A privacidade da escolha diante do
+sistema web é garantia do protocolo; a de que o cliente não abre outras
+posições depende de modelar o SHA-256 como oráculo aleatório (premissa).
+
+\item \textbf{Cifra dos livros:} AES-256-GCM, com uma chave aleatória por livro
+e o identificador do livro como dado associado.
+
+\item \textbf{Grupos, reenvio e pagamento:} grupo mínimo de 5 livros; reenvio
+da resposta do OT por 30 dias; gateway de pagamento simulado atrás de uma
+interface, cobrando o preço da faixa vezes N.
+
+\item \textbf{Tokens e reporte:} cada token vale um único download. A CDN
+reporta em lotes de 50 tokens ou uma vez por dia, embaralhados, sem horários e
+sem livro.
+
+\item \textbf{Semente:} toda a aleatoriedade do cliente numa compra (receptor
+do OT, mensagens dos tokens e fatores de cegamento) é derivada de uma semente
+de 256 bits gravada antes do envio. Com ela e a resposta recebida por e-mail, o
+programa local refaz a compra interrompida.
+
+\item \textbf{Programa local:} em Go, com linha de comando e uma janela gráfica
+para Windows que usa o componente WebView2. A página da janela é embutida no
+executável e não acessa a rede: todas as operações passam pelo código do
+programa, que se conecta apenas ao sistema web e à CDN.
+
+\item \textbf{Remuneração da CDN:} tarifa fixa por token entregue; o sistema
+web registra a quantidade e o valor de cada lote.
+
+\item \textbf{Falha seletiva no OT:} o programa local troca todos os tokens na
+CDN antes de decifrar e não informa ao sistema web se alguma chave falhou, de
+modo que sua comunicação é a mesma em qualquer caso.
+
+\item \textbf{Interface:} um único tema visual para os três componentes, com
+fontes servidas pelos próprios componentes, sem recursos de terceiros.
+\end{itemize}
+
+
+\subsection{Alternativas de projeto descartadas}\label{sec:alternativas}
+
+As alternativas a seguir são comparadas com o mesmo método da
+\autoref{sec:tecnologias}.
+
+\subsubsection{Execução do OT}
+
+Critérios: utilidade do envio da resposta por e-mail (RF14) e do reenvio
+(RF15); recuperação de uma compra interrompida após o pagamento (RNF07);
+quantidade de código criptográfico próprio.
+
+\begin{table}[H]
+\centering
+\caption{Comparativo das formas de execução do OT}\label{tab:comp-execucao}
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.2\textwidth}
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{0.12\textwidth}@{}}
+\toprule
+\textbf{Alternativa} & \textbf{RF14 e RF15} & \textbf{Compra interrompida} &
+\textbf{Código criptográfico próprio} & \textbf{Resultado} \\
+\midrule
+Síncrona, com semente guardada &
+Úteis: a resposta recebida por e-mail permite extrair as chaves &
+Recuperável a partir da semente &
+Nenhum além de inicializar o gerador com a semente; depende da premissa de
+determinismo do receptor &
+\textbf{Escolhida} \\
+\addlinespace
+Síncrona, sem estado guardado &
+Perdem a utilidade: sem o segredo, a resposta não serve &
+Irrecuperável: o cliente paga e perde a compra &
+Nenhum &
+Descartada \\
+\addlinespace
+Adaptador com estado serializado &
+Úteis &
+Recuperável a partir do estado salvo &
+Reorganização do protocolo em duas etapas sobre as primitivas da biblioteca &
+Descartada \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+
+\subsubsection{Onde executa o receptor do OT}
+
+Critérios: natureza da privacidade da escolha (RF07), usabilidade, viabilidade
+técnica com a biblioteca escolhida e armazenamento da semente (RF11).
+
+\begin{table}[H]
+\centering
+\caption{Comparativo dos locais de execução do receptor}\label{tab:comp-receptor}
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.19\textwidth}
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{0.11\textwidth}@{}}
+\toprule
+\textbf{Alternativa} & \textbf{Privacidade da escolha} & \textbf{Usabilidade} &
+\textbf{Biblioteca de OT} & \textbf{Semente} & \textbf{Resultado} \\
+\midrule
+Programa local com acesso restrito ao sistema web e à CDN &
+Garantia do protocolo &
+Sem transporte manual de arquivos &
+Execução nativa &
+Disco do cliente &
+\textbf{Escolhida} \\
+\addlinespace
+Programa local sem rede (versão 2 desta especificação) &
+Garantia do protocolo &
+Cliente transporta arquivos entre navegador e programa &
+Execução nativa &
+Disco do cliente &
+Descartada \\
+\addlinespace
+Navegador, com código fornecido pelo sistema web &
+Premissa: o servidor fornece código honesto &
+Nada a instalar &
+Exigiria compilação para WebAssembly (viabilidade não verificada) &
+Guardada no navegador, sujeita a remoção &
+Descartada \\
+\addlinespace
+Navegador, com código de outra origem (extensão ou página estática auditável) &
+Premissa mais fraca: código auditável e independente do servidor &
+Instalação de extensão ou uso de página separada &
+Mesma limitação da alternativa anterior &
+Guardada no navegador &
+Descartada \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+
+\subsection{Estado da implementação}\label{sec:estado}
+
+Esta seção registra o andamento da Fase 4 em 22 de novembro de 2026. Os
+três componentes estão implementados e o fluxo de compra roda de ponta a
+ponta. O código está no
+repositório do projeto (\url{https://github.com/migs39/tcc}).
+
+\begin{table}[H]
+\centering
+\caption{Passos da implementação do sistema web}\label{tab:passos}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.075\textwidth}
+  >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{0.22\textwidth}
+  >{\raggedright\arraybackslash}p{0.15\textwidth}@{}}
+\toprule
+\textbf{Passo} & \textbf{Entrega} & \textbf{Requisitos} & \textbf{Situação} \\
+\midrule
+0 & Base: banco de dados, migrações e testes isolados & --- & Concluído \\
+1 & Cadastro, autenticação e gestão de administradores & RF01, UC01 & Concluído \\
+2 & Catálogo, preços discretos, capas e grupos versionados & RF02, RF03, RF07, UC02, UC03 & Concluído \\
+3 & Pacote do catálogo e página pública & RF04, UC04 & Concluído \\
+4 & Compra sem conta, e-mail e pagamento & RF05, RF06, RF13 & Concluído \\
+5 & Envio da resposta do OT por e-mail & RF14, RNF04 & Concluído \\
+6 & OT no sistema web, com a biblioteca libOTe & RF07, RF08 & Concluído \\
+7 & Emissão de tokens com assinatura cega & RF16 & Concluído \\
+8 & Recebimento e validação do reporte da CDN & RF18, UC17 & Concluído \\
+9 & Reenvio da resposta do OT & RF15 & Concluído \\
+10 & Testes de privacidade e de carga & RNF02--RNF05 & Parcial \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+
+\subsubsection{O que os passos concluídos entregam}
+
+\begin{itemize}
+\item \textbf{Administradores (RF01):} cadastro, autenticação e gestão de
+perfis, inclusive desativação, que nunca deixa o sistema sem administrador
+ativo. As senhas são guardadas com argon2id; a sessão usa um token aleatório
+de 256 bits, do qual só o resumo fica no banco. Requisições de alteração
+vindas de outra origem são recusadas.
+
+\item \textbf{Catálogo e preços (RF02, RF03):} livros com título, autor,
+categoria, descrição, ano, ISBN (\emph{International Standard Book Number}), editora e capa; faixas de preço e categorias
+mantidas pelo administrador. A restrição de preço ao conjunto pré-definido é
+imposta pelo código e também pelo banco de dados, de modo que nenhum livro
+fica com preço fora do conjunto mesmo que o código seja contornado. Remover
+um livro o desativa, preservando as versões de grupo que o referenciam.
+
+\item \textbf{Grupos versionados (RF07):} cada mudança na composição de um
+grupo de mesmo preço gera uma versão imutável; editar dados de um livro sem
+mudar seu preço não gera versão. A posição do livro na versão é o índice
+usado pelo OT.
+
+\item \textbf{Pacote do catálogo (RF04):} o sistema web publica o catálogo
+como um arquivo ZIP determinístico, com os metadados dos livros ativos, as
+versões atuais dos grupos e as miniaturas das capas, assinado com Ed25519. A
+página pública de apresentação e download mostra a versão, o resumo e a chave
+pública do catálogo atual.
+\end{itemize}
+
+
+\subsubsection{Compra, CDN e programa local}
+
+\begin{itemize}
+\item \textbf{Compra (RF05--RF08, RF13, RF16):} o programa local envia o
+e-mail, a versão do grupo, N, a requisição do OT e os N valores cegados. O
+sistema web roda o lado \emph{sender} do OT, cobra o grupo vezes N, assina os
+valores às cegas e devolve a resposta do OT com as assinaturas. Uma
+requisição inválida é recusada antes da cobrança.
+\item \textbf{E-mail e reenvio (RF14, RF15):} a resposta do OT vai por e-mail,
+fora da requisição, e pode ser reenviada ao e-mail original por 30 dias. Ela
+não contém chave alguma.
+\item \textbf{CDN (RF17, RF18):} guarda os livros cifrados, entrega um livro
+por token válido da faixa do livro e ainda não usado e reporta os tokens em
+lotes. O sistema web confere cada assinatura e recusa tokens repetidos.
+\item \textbf{Programa local (RF04, RF10--RF12):} baixa e confere o catálogo,
+faz a busca localmente, grava a semente antes do envio, compra, troca os tokens
+por livros na CDN, extrai as chaves e decifra no computador do cliente.
+\end{itemize}
+
+O binário auxiliar que expõe o libOTe compila no Windows e no Linux, e a
+requisição do receptor é idêntica byte a byte quando gerada com a mesma
+semente, o que confirma a premissa da execução síncrona com semente.
+
+\subsection{Questões em aberto}
+
+\begin{itemize}
+\item Valor da remuneração da CDN por token (o sistema web já registra a
+quantidade por lote).
+\item Proteção da semente armazenada no programa local, além da permissão do
+arquivo.
+\item Compromissos das chaves dos livros no pacote do catálogo, para o
+programa local conferir as chaves extraídas (defesa contra o ataque de falha
+seletiva no OT).
+\item Interface gráfica do programa local.
+\item Integração com um gateway de pagamento e um serviço de e-mail reais.
+\item Momento do download logo após a compra, que a CDN observa; o programa
+local permite adiar o download.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+
+\section{Testes e Avaliação}\label{sec:testes}
+
+\subsection{Testes automatizados}
+
+O sistema web tem 29 testes automatizados, executados contra um banco
+PostgreSQL real, cada teste em um esquema isolado. Os grupos de testes são:
+
+\begin{itemize}
+\item \textbf{Administradores (9 testes):} formato e verificação do resumo de
+senha; cadastro e validações; autenticação; desativação, que encerra sessões
+e bloqueia o acesso; troca de senha, que encerra as sessões; sessão guardada
+apenas como resumo.
+\item \textbf{Catálogo (9 testes):} preço fora do conjunto recusado pelo
+código e pelo banco (RF03); regras de faixas e categorias; validação de ano e
+ISBN; sequência e imutabilidade das versões de grupo; capas e miniaturas.
+\item \textbf{Pacote do catálogo (3 testes):} conteúdo e ordem dos grupos;
+determinismo; geração de versões; recusa de pacote adulterado, de número de
+versão trocado e de chave errada.
+\item \textbf{Interface web (8 testes):} acesso administrativo restrito a
+administradores autenticados; recusa de requisições de outra origem; fluxo
+completo do catálogo; revalidação do pacote; página pública sem cookies,
+scripts ou recursos de terceiros.
+\end{itemize}
+
+Os demais componentes acrescentam os seguintes grupos de testes:
+
+\begin{itemize}
+\item \textbf{Protocolo (6 testes):} o cliente recupera exatamente as chaves
+escolhidas e nenhuma outra posição abre (RF12); a mesma semente gera a mesma
+requisição; o tamanho da requisição não depende da escolha; tokens válidos,
+reproduzíveis a partir da semente e diferentes do que o sistema web viu
+(RF16); cifra dos livros.
+\item \textbf{Compra (7 testes):} compra de ponta a ponta com o binário do
+libOTe; registros e respostas de mesma forma e tamanho para escolhas
+diferentes; e-mail sem chave; cobrança pelo grupo vezes N; pagamento recusado
+sem registro; validações; reenvio dentro e fora do prazo; reporte da CDN
+válido, repetido e adulterado.
+\item \textbf{CDN (1 teste):} entrega só com token da faixa do livro, uma única
+vez; reporte em lote; tabela de tokens sem livro nem horário.
+\end{itemize}
+
+Um teste de ponta a ponta com os três componentes cobriu o cadastro de livros,
+o envio dos arquivos à CDN, a compra de dois livros de um grupo de seis, a
+decifragem, as recusas (grupo pequeno, grupos diferentes, pagamento recusado),
+a recuperação de uma compra pelo e-mail e o reporte da CDN aceito pelo sistema
+web. Falta o teste de carga concorrente para RNF05.
+
+
+\subsection{Medições}
+
+As miniaturas de capa, de 200 por 300 pixels em JPEG, mediram de 1,6~KB (capa
+de cor lisa) a 19,8~KB (pior caso, imagem de ruído aleatório). Com mil livros,
+o pacote do catálogo fica abaixo de cerca de 20~MB.
+
+Com um grupo de 100 livros e N = 5, uma compra leva cerca de 58~ms no sistema
+web, num computador de dois núcleos. O tempo inclui o \emph{sender} do OT, as
+cifras de Naor--Pinkas, a cobrança simulada, cinco assinaturas RSA de 3072
+bits e a gravação. Isso dá cerca de mil compras por minuto em um núcleo, acima
+das 600 de RNF05, e fica muito abaixo do limite de um minuto de RNF03. A
+requisição do OT tem 1.256 bytes para 19 OTs e a resposta do \emph{sender},
+64 bytes.
