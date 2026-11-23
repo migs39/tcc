@@ -165,7 +165,10 @@ extrair a chave.
 OT é gerada pelo programa local, instalado pelo cliente, e não por código
 entregue pelo sistema web durante a compra. Assim, a privacidade da escolha
 (RF07) decorre do protocolo de OT e não depende de o servidor fornecer código
-honesto.
+honesto. Pelo mesmo motivo, o programa é distribuído por um canal público e
+igual para todos, independente do sistema web, com seu resumo criptográfico
+publicado para conferência: se o próprio sistema web entregasse o programa,
+poderia entregar a um cliente específico uma versão adulterada.
 
 \item \textbf{Navegação e busca não revelam interesse.} O programa local
 baixa o catálogo inteiro, com miniaturas de capa de tamanho fixo, e faz a
@@ -180,7 +183,10 @@ registros de acesso no sistema web.
 chave final e a semente nunca deixam o computador do cliente (RF10, RF11). O
 endereço de rede do cliente é visível à CDN; a ligação entre esse dado e a
 identidade do comprador exigiria conivência entre site e CDN, excluída pela
-premissa acima.
+premissa acima. Pela mesma razão, nenhum intermediário de rede comum aos dois,
+como um serviço de túnel usado para expor os servidores, pode decifrar o
+tráfego: um intermediário que visse ao mesmo tempo a compra e o download de um
+cliente equivaleria a um observador conivente.
 
 \item \textbf{O cegamento dos tokens é removido no programa local.} Os valores
 cegados são gerados e descegados no programa local, e não no navegador, pelo

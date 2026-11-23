@@ -1,6 +1,16 @@
 \chapter{Aspectos Conceituais}\label{cap:conceitos}
 % ===========================================================================
 
+Este capítulo apresenta os conceitos em que o trabalho se apoia. Começa pelo
+\emph{Oblivious Transfer} e suas variantes, incluindo a construção de um OT
+1-out-of-n a partir de OTs 1-out-of-2, e pelas técnicas que reduzem o custo do
+OT. Em seguida, trata do criptossistema de Rabin, estudado na fundamentação, e
+das três primitivas que completam o sistema: as assinaturas cegas, que
+permitem emitir tokens de download não ligáveis à compra; as funções de hash
+e o modelo do oráculo aleatório, que sustentam a construção de Naor e Pinkas;
+e a criptografia simétrica autenticada, usada para cifrar os livros.
+
+
 \section{Oblivious Transfer (OT)}
 
 \subsection{Definição}
@@ -57,6 +67,37 @@ Generalização do caso anterior:
 O \emph{receiver} obtém apenas $x_i$, mantendo as mesmas garantias de
 privacidade.
 
+\subsubsection{Construção a partir de OTs 1-out-of-2}
+
+\citeonline{naorpinkas1999} mostram como obter um OT 1-out-of-n a partir de
+$\ell = \lceil \log_2 n \rceil$ execuções de OT 1-out-of-2. O \emph{sender}
+sorteia $\ell$ pares de chaves aleatórias
+\[
+(K_1^0, K_1^1),\ (K_2^0, K_2^1),\ \ldots,\ (K_\ell^0, K_\ell^1).
+\]
+Cada índice $i \in \{0, \ldots, n-1\}$ é escrito em binário como
+$i = (i_1, i_2, \ldots, i_\ell)$, e a mensagem $x_i$ é cifrada com uma chave
+que depende de uma chave de cada par, a escolhida pelos bits de $i$:
+\[
+y_i = x_i \oplus H\!\left(i \,\|\, K_1^{i_1} \,\|\, K_2^{i_2} \,\|\, \cdots \,\|\, K_\ell^{i_\ell}\right),
+\]
+em que $H$ é uma função que, sem conhecer todas as chaves do argumento, não se
+distingue de uma função aleatória, e $\|$ denota concatenação. O
+\emph{sender} envia todos os $y_i$. O \emph{receiver}, que deseja o índice
+$i$, executa $\ell$ OTs 1-out-of-2, escolhendo no $j$-ésimo deles o bit $i_j$,
+e obtém exatamente as chaves $K_1^{i_1}, \ldots, K_\ell^{i_\ell}$. Com elas,
+calcula o valor de $H$ e recupera $x_i$.
+
+A privacidade do \emph{receiver} vem dos OTs 1-out-of-2: o \emph{sender} não
+aprende nenhum bit de $i$. A do \emph{sender} vem de $H$: para abrir outra
+posição $i' \neq i$, o \emph{receiver} precisaria de ao menos uma chave
+$K_j^{1-i_j}$ que não recebeu. No artigo original, $H$ é uma função
+pseudoaleatória; quando é instanciada com uma função de hash, a segurança passa
+a depender do modelo do oráculo aleatório (\autoref{sec:hash}). O custo é de
+$\ell$ OTs 1-out-of-2 e $n$ avaliações de $H$; para obter N itens, basta
+repetir a construção N vezes, com pares de chaves independentes.
+
+
 \subsection{k-out-of-n OT}
 
 Nesta variante:
@@ -79,7 +120,7 @@ O Generalized Oblivious Transfer (GOT) é uma generalização do Oblivious
 Transfer tradicional, introduzida por Ishai e Kushilevitz.
 \cite{tassa2011}
 
-\subsection{Definição}
+\subsubsection{Definição}
 
 Seja Alice portadora de um conjunto de mensagens
 \[
@@ -94,7 +135,7 @@ permitidos, chamada de coleção monotônica decrescente, isto é,
 S \in \mathcal{A} \text{ e } S' \subseteq S \implies S' \in \mathcal{A}.
 \]
 
-\subsection{Funcionalidade}
+\subsubsection{Funcionalidade}
 
 Bob escolhe um subconjunto $S \subseteq [n]$ tal que $S \in \mathcal{A}$. Ao
 final do protocolo:
@@ -106,7 +147,7 @@ final do protocolo:
 por Bob.
 \end{itemize}
 
-\subsection{Relação com OT Clássico}
+\subsubsection{Relação com OT Clássico}
 
 \begin{itemize}
 \item No 1-out-of-n OT:
@@ -118,7 +159,7 @@ por Bob.
 pode ser qualquer coleção monotônica decrescente.
 \end{itemize}
 
-\subsection{Interpretação}
+\subsubsection{Interpretação}
 
 O GOT permite especificar políticas arbitrárias de acesso, desde que sejam
 fechadas por inclusão (monotonicidade decrescente). Por exemplo:
@@ -130,7 +171,7 @@ específicos;
 \item qualquer subconjunto contido em um conjunto autorizado $T$.
 \end{itemize}
 
-\subsection{Implementação}
+\subsubsection{Implementação}
 
 Ishai e Kushilevitz mostraram que o GOT pode ser implementado a partir de
 múltiplas execuções paralelas de protocolos 1-out-of-2 OT.
@@ -149,6 +190,27 @@ simétrica.
 \end{enumerate}
 
 Isso reduz drasticamente o custo computacional, tornando prática a computação segura multipartidária (\emph{Secure Multi-Party Computation} -- MPC).
+
+\section{OT base de Masny e Rindal}\label{sec:mr19}
+
+Um OT base é um OT construído diretamente sobre criptografia de chave pública,
+sem depender de outros OTs. \citeonline{masnyrindal2019} propõem um OT
+1-out-of-2 de duas mensagens: o \emph{receiver} envia uma única mensagem que
+codifica seu bit de escolha, e o \emph{sender} responde com uma única
+mensagem. O protocolo produz OTs ditos aleatórios: em vez de transferir
+mensagens escolhidas pelo \emph{sender}, ele faz com que o \emph{sender} obtenha
+dois valores aleatórios e o \emph{receiver}, apenas aquele que corresponde ao
+seu bit. Esses valores servem diretamente como as chaves $K_j^0$ e $K_j^1$ da
+construção de Naor e Pinkas.
+
+Os autores definem uma noção de segurança, chamada endêmica, adequada a esse
+uso, e mostram instâncias eficientes sobre curvas elípticas. A biblioteca
+libOTe \cite{libote} implementa o protocolo e é usada no lado do
+\emph{sender}, no sistema web, e no lado do \emph{receiver}, no programa local.
+Como a requisição do \emph{receiver} não depende de nenhuma mensagem prévia do
+\emph{sender}, o OT cabe em uma única ida e volta entre o programa local e o
+sistema web.
+
 
 \section{Criptossistema de Rabin}
 
@@ -223,3 +285,81 @@ r_4 &= n - r_3
 
 Um desses quatro valores é o texto plano original $m$, embora não seja
 possível determinar qual deles é o correto sem informação adicional.
+
+\subsection{Relação com este trabalho}
+
+O criptossistema de Rabin foi estudado na fundamentação como uma base possível
+para o OT, já que o OT foi originalmente proposto por Rabin, em 1981, em relatório republicado em 2005 \cite{rabin2005}.
+A implementação, porém, não o utiliza: o OT base vem da biblioteca libOTe,
+com o protocolo de \citeonline{masnyrindal2019} (\autoref{sec:mr19}). A
+escolha seguiu a diretriz de usar bibliotecas consolidadas para as
+primitivas criptográficas, em vez de implementações próprias, que só teriam
+fim didático.
+
+\section{Assinaturas cegas}\label{sec:assinatura-cega}
+
+Uma assinatura cega permite que um usuário obtenha a assinatura de um
+assinante sobre uma mensagem sem que o assinante veja a mensagem. Proposta por
+\citeonline{chaum1983} para pagamentos eletrônicos não rastreáveis, ela tem
+duas propriedades: a assinatura resultante é válida e verificável por
+qualquer pessoa com a chave pública; e o assinante, mais tarde, não consegue
+ligar uma assinatura à sessão em que a produziu.
+
+Com RSA, de módulo $N$, expoente público $e$ e expoente privado $d$, o
+protocolo tem três passos. O usuário sorteia um fator de cegamento $r$,
+invertível módulo $N$, e envia ao assinante a mensagem cegada
+\[
+m' = m \cdot r^e \bmod N.
+\]
+O assinante devolve $s' = (m')^d \bmod N = m^d \cdot r \bmod N$, sem conhecer
+$m$. O usuário remove o cegamento e obtém
+\[
+s = s' \cdot r^{-1} \bmod N = m^d \bmod N,
+\]
+que é a assinatura RSA comum de $m$. Como $r$ é aleatório, $m'$ não revela nada
+sobre $m$, e o par $(m, s)$ apresentado depois não se liga a $m'$.
+
+O documento RFC 9474 \cite{rfc9474} padroniza esse esquema com a codificação
+PSS (\emph{Probabilistic Signature Scheme}) e uma mensagem aleatorizada, o que evita os ataques conhecidos contra o
+RSA cego ingênuo. Neste trabalho, as assinaturas cegas são os tokens de
+download: o sistema web assina às cegas um valor por livro comprado, e a CDN
+aceita um token se a assinatura for válida e o token ainda não tiver sido
+usado. O sistema web vê o token quando a CDN o reporta, mas não consegue
+ligá-lo à compra em que o emitiu.
+
+\section{Funções de hash e o modelo do oráculo aleatório}\label{sec:hash}
+
+Uma função de hash criptográfica mapeia entradas de qualquer tamanho em um
+resumo de tamanho fixo, de modo que seja inviável encontrar duas entradas com
+o mesmo resumo ou uma entrada para um resumo dado. O SHA-256 (\emph{Secure Hash
+Algorithm}), padronizado pelo \emph{National Institute of Standards and
+Technology} (NIST), produz resumos de 256 bits \cite{fips1804} e é usado no trabalho para
+identificar versões do catálogo e para derivar as chaves da construção de
+Naor e Pinkas.
+
+Algumas provas de segurança precisam de mais do que essas propriedades: tratam
+a função de hash como um oráculo aleatório, isto é, uma função escolhida ao
+acaso entre todas as possíveis, cujas saídas só podem ser conhecidas
+consultando-a. \citeonline{bellare1993} formalizam esse modelo como um meio de
+projetar protocolos eficientes com argumentos de segurança. Ele é uma
+idealização: nenhuma função concreta é um oráculo aleatório, e uma prova nesse
+modelo é um argumento heurístico, ainda que amplamente aceito. Por isso, a
+garantia de que o cliente não abre posições além das escolhidas é apresentada
+neste trabalho como válida sob o modelo do oráculo aleatório.
+
+\section{Criptografia simétrica autenticada}\label{sec:aes-gcm}
+
+Os livros são cifrados com uma cifra simétrica: a mesma chave cifra e decifra.
+O AES (\emph{Advanced Encryption Standard}) \cite{fips197} é a cifra de bloco
+padronizada pelo NIST, com chaves de 128, 192 ou 256 bits. Uma cifra de bloco
+precisa de um modo de operação para cifrar mensagens longas; o modo GCM
+(\emph{Galois/Counter Mode}) \cite{dworkin2007} combina cifragem e
+autenticação. Além do texto cifrado, ele produz uma etiqueta que permite ao
+destinatário verificar que o texto não foi alterado, e aceita dados
+associados, que são autenticados sem ser cifrados.
+
+O trabalho usa o AES-256-GCM, com uma chave aleatória de 256 bits por livro e o
+identificador do livro como dado associado. A autenticação tem um papel além
+da integridade: uma chave errada é detectada na decifragem, em vez de produzir
+um arquivo corrompido. Isso permite ao programa local reconhecer uma resposta
+de OT adulterada, sem precisar avisar o sistema web.

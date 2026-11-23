@@ -109,7 +109,7 @@ Pendência de implementação: integração com um gateway de pagamento real, qu
 - Por compra, no perfil de CPU: ≈ 89 ms nas 5 assinaturas cegas RSA-3072 (o `circl` exponencia com `math/big`, ≈ 18 ms cada) e ≈ 57 ms no `ot-helper` (processo, sender e pipes). O resto é espera fora da CPU, provavelmente o banco atrás do Docker Desktop (estimativa, sem medição separada).
 - Comando: `go test -run x -bench Compra -benchtime 300x -cpu 1,4,8 ./internal/compra` (em `site/`, com `OT_HELPER` absoluto).
 
-**Bateria controlada (2026-11-22, Windows):** `Claude outputs/bateria.sh` sobe um ambiente isolado (banco próprio, portas 18080/18081, segredo aleatório), cadastra 8 livros pelo admin e roda 24 casos de ponta a ponta com a CLI, mais o `go test` dos 4 módulos (48 testes). Resultado: 24/24 e 48/48. Compra completa em 285 ms e busca em 85 ms. Detalhes na seção 5.3 da monografia.
+**Bateria controlada (2026-11-23, Windows):** `Claude outputs/bateria.sh` sobe um ambiente isolado (banco próprio, portas 18080/18081, segredo aleatório), cadastra 8 livros pelo admin e roda 24 casos de ponta a ponta com a CLI, mais o `go test` dos 4 módulos (51 testes). Resultado: 24/24 e 51/51. Compra completa em 252 ms e busca em 80 ms. Detalhes na seção 5.3 da monografia.
 
 **Acesso externo (D-015):** Tailscale instalado e logado; falta ativar o Funnel na tailnet (link no console do Tailscale) e rodar `abrir_acesso_publico.bat`. Depois, `set PUBLICO=https://<máquina>.<tailnet>.ts.net` + `build_app.bat` geram `bin\LivrariaOT-cliente.zip` para distribuir.
 

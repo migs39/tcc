@@ -157,6 +157,33 @@ OT e guarda seu segredo, comunica-se com o sistema web e com a CDN, remove o
 cegamento dos tokens e descriptografa os livros localmente.
 \end{enumerate}
 
+A \autoref{fig:arquitetura} mostra os componentes e o que cada um envia aos
+demais durante uma compra.
+
+\begin{figure}[htbp]
+\centering
+\caption{Componentes da solução e mensagens trocadas numa compra}\label{fig:arquitetura}
+\begin{tikzpicture}[
+  comp/.style={draw, rounded corners=3pt, align=center, text width=3cm, minimum height=1.4cm, font=\small},
+  msg/.style={-{Stealth[length=2mm]}, thick},
+  rot/.style={font=\scriptsize, align=center, inner sep=2pt}
+]
+\node[comp, text width=2.8cm, minimum height=5.2cm] (prog) at (0,0) {\textbf{Programa local}\\(computador\\do cliente)};
+\node[comp] (site) at (7.2,1.9)  {\textbf{Sistema web}};
+\node[comp] (cdn)  at (7.2,-1.9) {\textbf{CDN}};
+\node[comp] (gat)  at (12.4,1.9) {\textbf{Gateway}\\de pagamento};
+
+\draw[msg] (1.55,2.1) -- node[rot, above] {e-mail, requisição do OT,\\N valores cegados} (5.55,2.1);
+\draw[msg] (5.55,1.7) -- node[rot, below] {resposta do OT,\\N assinaturas cegas\\(também por e-mail)} (1.55,1.7);
+\draw[msg] (site.east) -- node[rot, above] {grupo $\times$ N} (gat.west);
+\draw[msg] (1.55,-1.7) -- node[rot, above] {um token por livro} (5.55,-1.7);
+\draw[msg] (5.55,-2.1) -- node[rot, below] {livro cifrado} (1.55,-2.1);
+\draw[msg] (6.9,1.2) -- node[rot, left] {livros cifrados\\(publicação)} (6.9,-1.2);
+\draw[msg] (7.5,-1.2) -- node[rot, right] {tokens usados\\e quantidade} (7.5,1.2);
+\end{tikzpicture}
+\fonte{Elaborado pelos autores.}
+\end{figure}
+
 No fluxo de compra, o cliente escolhe um grupo de livros de mesmo preço e
 obtém, por meio do OT, as chaves de N itens desse grupo, sem que o site saiba
 quais foram escolhidos. O cliente recebe também N tokens com assinatura cega,
@@ -198,7 +225,7 @@ administração renderizadas no servidor, sem recursos de terceiros; catálogo
 publicado como pacote completo, sem vitrine pública; biblioteca de OT acessada
 por um binário auxiliar. A única página pública é a de apresentação e
 download, sem cookies, scripts ou recursos de terceiros, que exibe a versão,
-o resumo SHA-256 (\emph{Secure Hash Algorithm}) e a chave pública do catálogo atual para que qualquer pessoa
+o resumo SHA-256 e a chave pública do catálogo atual para que qualquer pessoa
 possa conferi-los.
 
 \item \textbf{Navegação e busca:} no programa local, sobre o pacote completo
@@ -229,7 +256,7 @@ dos OTs correspondentes aos bits de $i$. A privacidade da escolha diante do
 sistema web é garantia do protocolo; a de que o cliente não abre outras
 posições depende de modelar o SHA-256 como oráculo aleatório (premissa).
 
-\item \textbf{Cifra dos livros:} AES-256-GCM (\emph{Advanced Encryption Standard}, chave de 256 bits, no modo \emph{Galois/Counter Mode}), com uma chave aleatória por livro
+\item \textbf{Cifra dos livros:} AES-256-GCM (\autoref{sec:aes-gcm}), com uma chave aleatória por livro
 e o identificador do livro como dado associado.
 
 \item \textbf{Grupos, reenvio e pagamento:} grupo mínimo de 5 livros; reenvio
@@ -381,7 +408,7 @@ Descartada \\
 
 \subsection{Estado da implementação}\label{sec:estado}
 
-Esta seção registra o estado final da implementação, em 22 de novembro de
+Esta seção registra o estado final da implementação, em 23 de novembro de
 2026. Os três componentes estão implementados e o fluxo de compra roda de
 ponta a ponta, com todos os requisitos funcionais essenciais. O código está no
 repositório do projeto (\url{https://github.com/migs39/tcc}).
@@ -466,6 +493,26 @@ O binário auxiliar que expõe o libOTe compila no Windows e no Linux, e a
 requisição do receptor é idêntica byte a byte quando gerada com a mesma
 semente, o que confirma a premissa da execução síncrona com semente.
 
+A \autoref{fig:janela} mostra a janela do programa local durante a escolha:
+o catálogo é navegado no computador do cliente, e a barra de compra lembra o
+que o sistema web vai saber, o grupo, a quantidade e o e-mail. A
+\autoref{fig:pagina} mostra a página pública do sistema web, que é a mesma
+para todos os visitantes.
+
+\begin{figure}[htbp]
+\centering
+\caption{Janela do programa local: catálogo com dois livros escolhidos}\label{fig:janela}
+\includegraphics[width=\textwidth]{figuras/janela-catalogo.jpg}
+\fonte{Elaborado pelos autores.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Página pública do sistema web}\label{fig:pagina}
+\includegraphics[width=\textwidth]{figuras/pagina-publica.jpg}
+\fonte{Elaborado pelos autores.}
+\end{figure}
+
 \subsection{Limitações conhecidas}
 
 \begin{itemize}
@@ -528,20 +575,22 @@ Preço fora do conjunto recusado pelo código e pelo banco (RF03); regras de
 faixas e categorias; ano e ISBN; sequência e imutabilidade das versões de
 grupo; capas e miniaturas (RF02). \\
 \addlinespace
-Sistema web: pacote do catálogo & 3 &
+Sistema web: pacote do catálogo & 5 &
 Conteúdo e ordem dos grupos; determinismo; recusa de pacote adulterado, de
-versão trocada e de chave errada (RF04). \\
+versão trocada e de chave errada (RF04); link de download do programa local
+aceito só em \emph{https}, com o resumo SHA-256 exibido na página. \\
 \addlinespace
 Sistema web: interface & 9 &
 Acesso restrito a administradores; recusa de requisições de outra origem e de
 formulários fora de UTF-8; fluxo do catálogo; página pública sem cookies,
 \emph{scripts} ou recursos de terceiros. \\
 \addlinespace
-Sistema web: compra & 7 &
+Sistema web: compra & 8 &
 Compra de ponta a ponta com o libOTe; registros e respostas de mesma forma e
-tamanho para escolhas diferentes; e-mail sem chave; cobrança pelo grupo vezes
-N; pagamento recusado sem registro; validações; reenvio dentro e fora do prazo;
-reporte da CDN válido, repetido e adulterado (RF05--RF08, RF13--RF16, RF18). \\
+tamanho para escolhas diferentes; e-mail sem chave; envio por SMTP com a
+resposta do OT anexada; cobrança pelo grupo vezes N; pagamento recusado sem
+registro; validações; reenvio dentro e fora do prazo; reporte da CDN válido,
+repetido e adulterado (RF05--RF08, RF13--RF16, RF18). \\
 \addlinespace
 CDN & 1 &
 Entrega só com token da faixa do livro, uma única vez; reporte em lote; tabela
@@ -552,7 +601,7 @@ Página da janela sem acesso à rede; validação das chamadas da página;
 endereços do sistema web e da CDN configurados (D-004); aviso de livro já
 baixado que saiu da biblioteca (RF17). \\
 \midrule
-\textbf{Total} & \textbf{48} & \\
+\textbf{Total} & \textbf{51} & \\
 \bottomrule
 \end{tabularx}
 \fonte{Elaborado pelos autores.}
@@ -570,9 +619,9 @@ livro. Os casos usam o programa local em linha de comando, cada um com uma
 pasta de dados própria, e conferem o resultado no que o cliente recebe, no
 banco de dados e nos registros de execução. Ao final, o ambiente é apagado.
 
-A \autoref{tab:bateria} lista os casos. A bateria foi executada em 22 de
+A \autoref{tab:bateria} lista os casos. A bateria foi executada em 23 de
 novembro de 2026, num computador com Windows 11 e processador Intel Core
-i7-12700H, e os 24 casos passaram. Na mesma execução, os 48 testes
+i7-12700H, e os 24 casos passaram. Na mesma execução, os 51 testes
 automatizados da \autoref{tab:testes-auto} também passaram.
 
 \begin{table}[H]
@@ -657,7 +706,7 @@ espera de entrada e saída, provavelmente o acesso ao banco de dados executado
 em contêiner; esse componente não foi medido separadamente. Na bateria
 controlada, a compra completa vista pelo cliente, de N = 2 livros num grupo de
 seis, incluindo o OT, os tokens, o download na CDN e a decifragem, levou
-285~ms, e a busca local, 85~ms.
+252~ms, e a busca local, 80~ms.
 
 \subsection{Avaliação dos requisitos não funcionais}
 
@@ -679,10 +728,10 @@ AES-256-GCM nos livros, RSA de 3072 bits nos tokens, Ed25519 no catálogo,
 SHA-256 na derivação de Naor--Pinkas e OT base sobre curva elíptica de 128
 bits de segurança. & Atendido por parâmetro \\
 \addlinespace
-RNF02 & Busca em até 5~s & 85~ms no catálogo da bateria; a busca é local e
+RNF02 & Busca em até 5~s & 80~ms no catálogo da bateria; a busca é local e
 não depende da rede. & Atendido \\
 \addlinespace
-RNF03 & Compra em até 1~min & 285~ms de ponta a ponta na bateria; 238~ms no
+RNF03 & Compra em até 1~min & 252~ms de ponta a ponta na bateria; 238~ms no
 sistema web com n = 100 e N = 5. & Atendido \\
 \addlinespace
 RNF04 & E-mail em até 1~min & A mensagem é enfileirada na própria compra e

@@ -17,7 +17,7 @@ Duração total: cerca de 4 min 50 s, com 9 slides. As falas abaixo também est�
 
 ## 2. Onde estamos — 30 s · [quem: ______]
 
-> "Das seis fases do método, cinco estão concluídas. A sexta, a consolidação, é a monografia, que está quase final. Agora os três componentes rodam, os 18 requisitos funcionais estão implementados, e a bateria de testes passa inteira: 24 casos de ponta a ponta e 48 testes automatizados."
+> "Das seis fases do método, cinco estão concluídas. A sexta, a consolidação, é a monografia, que está quase final. Agora os três componentes rodam, os 18 requisitos funcionais estão implementados, e a bateria de testes passa inteira: 24 casos de ponta a ponta e 51 testes automatizados."
 
 ## 3. A compra privada — 45 s · [quem: ______]
 
@@ -39,7 +39,7 @@ Duração total: cerca de 4 min 50 s, com 9 slides. As falas abaixo também est�
 
 ## 7. Desempenho — 35 s · [quem: ______]
 
-> "A busca leva 85 milissegundos, e a compra completa, menos de um terço de segundo. No site, o teste concorrente chegou a 1.213 compras por minuto com quatro núcleos, o dobro da meta. **Sendo transparentes:** com um núcleo só, são 396 por minuto, abaixo da meta. O gargalo são as assinaturas cegas."
+> "A busca leva 80 milissegundos, e a compra completa, menos de um terço de segundo. No site, o teste concorrente chegou a 1.213 compras por minuto com quatro núcleos, o dobro da meta. **Sendo transparentes:** com um núcleo só, são 396 por minuto, abaixo da meta. O gargalo são as assinaturas cegas."
 
 ## 8. Privacidade — 40 s · [quem: ______]
 
