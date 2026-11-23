@@ -38,10 +38,11 @@ import (
 	"tcc/protocolo"
 )
 
-// chavePacote é embutida na compilação:
+// Valores embutidos na compilação; os endereços são opcionais (padrão:
+// localhost) e as variáveis SITE_URL e CDN_URL os sobrescrevem:
 //
-//	go build -ldflags "-X main.chavePacote=<hex>" ./cmd/livraria
-var chavePacote = ""
+//	go build -ldflags "-X main.chavePacote=<hex> -X main.siteURL=https://... -X main.cdnURL=https://..." ./cmd/livraria
+var chavePacote, siteURL, cdnURL string
 
 func main() {
 	if err := rodar(os.Args[1:]); err != nil {
@@ -50,7 +51,9 @@ func main() {
 	}
 }
 
-func novoCliente() (*cliente.Cliente, error) { return cliente.Configurar(chavePacote) }
+func novoCliente() (*cliente.Cliente, error) {
+	return cliente.Configurar(cliente.Embutidos{ChavePacote: chavePacote, SiteURL: siteURL, CDNURL: cdnURL})
+}
 
 func rodar(args []string) error {
 	if len(args) == 0 {

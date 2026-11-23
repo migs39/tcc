@@ -30,20 +30,20 @@ usabilidade devem ser atendidas. O detalhamento dessa etapa é apresentado no
 
 \section{Fase 3 --- Projeto da Solução}
 
-Após a definição dos requisitos, pretende-se fazer o projeto com uma
-arquitetura inicial de referência. Os objetivos iniciais do projeto são:
-organização em três componentes (sistema web, CDN e programa local), modelagem
-preliminar do fluxo de compra privada, alternativas de agrupamento de itens
-por faixa de preço e possíveis formatos de artefatos de criptografia enviados.
-Nessa etapa, os critérios de separação entre as operações do sistema web e as
-operações locais do cliente serão definidos conforme os resultados parciais. O
-detalhamento dessa etapa é apresentado no \autoref{cap:desenvolvimento}.
+Com os requisitos definidos, foi feito o projeto da solução: a organização em
+três componentes (sistema web, CDN e programa local), o fluxo de compra
+privada, o agrupamento dos livros por faixa de preço e os formatos das
+mensagens trocadas. Cada decisão foi registrada com as alternativas
+consideradas e os motivos da escolha, separando o que cabe ao sistema web do
+que roda no computador do cliente. Antes de construir sobre a biblioteca de OT,
+as premissas de que o projeto dependia, como a reprodução do receptor a partir
+de uma semente, foram transformadas em testes automatizados. O detalhamento
+dessa etapa é apresentado no \autoref{cap:desenvolvimento}.
 
 \section{Fase 4 --- Implementação Incremental}
 
-A implementação deve ser conduzida em incrementos. A sequência abaixo
-representa uma proposta inicial, passível de ajustes durante o
-desenvolvimento:
+A implementação foi conduzida em incrementos, cada um entregue com testes
+automatizados, na seguinte ordem:
 
 \begin{itemize}
 \item estrutura de catálogo e cadastro de itens;
@@ -54,23 +54,24 @@ CDN;
 \item suporte ao processo de recuperação local dos itens adquiridos.
 \end{itemize}
 
-Esse encadeamento foi definido como estratégia de partida e poderá ser
-reordenado caso surjam problemas técnicos ou necessidades de validação não
-previstas. O detalhamento dessa etapa é apresentado no \autoref{cap:desenvolvimento}.
+A ordem prevista foi mantida. Ao longo dela, algumas decisões foram revistas,
+como permitir que o programa local acesse a rede, restrito ao sistema web e à
+CDN, e levar a navegação do catálogo para o programa local. O detalhamento
+dessa etapa é apresentado no \autoref{cap:desenvolvimento}.
 
 \section{Fase 5 --- Testes e Avaliação}
 
-Na fase de avaliação, pretende-se priorizar três questões: (i) eficácia do
-sistema, com foco no atendimento aos requisitos; (ii) nível de privacidade,
-buscando provas de que o servidor não infere a escolha específica do cliente;
-e (iii) desempenho, com medições de tempo de busca, compra e entrega. Os
-procedimentos exatos de teste e o recorte final de métricas serão definidos ao
-longo da implementação e posteriormente descritos no \autoref{cap:desenvolvimento}.
+A avaliação priorizou três questões: (i) eficácia do sistema, com foco no
+atendimento aos requisitos; (ii) nível de privacidade, verificando que nada do
+que o sistema web grava, registra ou responde depende da escolha do cliente; e
+(iii) desempenho, com medições de tempo de busca, de compra e de vazão. Ela foi
+feita em três níveis: testes automatizados de cada componente, uma bateria
+controlada de ponta a ponta com os três componentes em execução e medições.
+Os procedimentos e os resultados estão na \autoref{sec:testes}.
 
 \section{Fase 6 --- Consolidação e Análise Final}
 
-Na etapa final, pretende-se consolidar os resultados alcançados e analisá-los
-com os objetivos do projeto, dando ênfase nas limitações observadas,
-contribuições efetivas e possibilidades de continuidade. O nível de
-profundidade dessa análise dependerá do que for possível concluir nas etapas
-anteriores e será apresentado no capítulo de considerações finais.
+Na etapa final, os resultados foram consolidados e comparados com os objetivos
+do projeto, com ênfase nas limitações observadas, nas contribuições efetivas e
+nas possibilidades de continuidade. Essa análise é apresentada no
+\autoref{cap:consideracoes}.

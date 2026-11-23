@@ -71,7 +71,7 @@
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta}
+\usetikzlibrary{arrows.meta,babel} % babel: o francês do abnTeX2 torna ";" ativo, o que quebra o TikZ
 % ---
 
 % ---
@@ -180,6 +180,7 @@
 % Pacote float (posicionamento [H]) carregado depois do ambiente quadro,
 % porque redefine \newfloat da classe memoir.
 \usepackage{float}
+\raggedbottom % sem esticar espaços quando uma tabela [H] passa para a página seguinte
 % ---
 
 % ---------------------------------------------------------------------------
@@ -458,7 +459,6 @@
 % resumo em português
 \setlength{\absparsep}{18pt} % ajusta o espaçamento dos parágrafos do resumo
 \begin{resumo}
-% RASCUNHO: revisar ao final do PF II, incluindo resultados e conclusões.
 % Diretrizes: parágrafo único, até 500 palavras, 3.a pessoa, voz ativa.
  Este trabalho apresenta o projeto e a implementação de um protótipo de livraria
  digital em que a loja recebe o pagamento sem saber quais livros o cliente
@@ -474,8 +474,18 @@
  do cliente. O método segue as fases de fundamentação teórica, especificação de
  requisitos, projeto, implementação incremental, testes e consolidação. O
  sistema web usa Go e PostgreSQL, a biblioteca libOTe com o OT base de Masny e
- Rindal e assinaturas cegas RSA padronizadas.
- % TODO: resultados mais significativos e principais conclusões.
+ Rindal e assinaturas cegas RSA padronizadas. O OT 1-out-of-n de Naor e Pinkas,
+ repetido para cada livro comprado, entrega exatamente as chaves escolhidas, e
+ a semente guardada pelo programa local permite concluir uma compra
+ interrompida a partir da resposta recebida por e-mail. Uma bateria controlada
+ de 24 casos de ponta a ponta e 48 testes automatizados verificaram os
+ requisitos funcionais e mostraram que o que o sistema web grava, registra e
+ responde não depende da escolha do cliente. A compra completa levou cerca de
+ 0,3 s, a busca local, menos de 0,1 s, e o sistema web processou cerca de
+ 1.200 compras por minuto com quatro núcleos, acima das metas. Conclui-se que o
+ OT pode ser integrado a um fluxo de compra completo, com pagamento, entrega e
+ remuneração da distribuição, escondendo da loja os itens comprados; a não
+ conivência entre a loja e a CDN permanece uma premissa.
 
  \textbf{Palavras-chave}: Transferência inconsciente. Privacidade. Assinatura cega. Comércio eletrônico. Criptografia.
 \end{resumo}
@@ -483,7 +493,6 @@
 % resumo em inglês
 \begin{resumo}[Abstract]
  \begin{otherlanguage*}{english}
-   % RASCUNHO: manter equivalente ao resumo em português.
    This work presents the design and implementation of a digital bookstore
    prototype in which the store receives the payment without learning which
    books the customer bought. The solution uses Oblivious Transfer (OT)
@@ -499,7 +508,18 @@
    background, requirements specification, design, incremental implementation,
    testing and consolidation. The web system uses Go and PostgreSQL, the libOTe
    library with the Masny--Rindal base OT, and standardized RSA blind
-   signatures.
+   signatures. The Naor--Pinkas 1-out-of-n OT, repeated for each purchased
+   book, delivers exactly the chosen keys, and the seed stored by the local
+   program allows an interrupted purchase to be completed from the response
+   received by e-mail. A controlled battery of 24 end-to-end cases and 48
+   automated tests verified the functional requirements and showed that what
+   the web system stores, logs and returns does not depend on the customer's
+   choice. A complete purchase took about 0.3 s, local search less than 0.1 s,
+   and the web system processed about 1,200 purchases per minute on four
+   cores, above the targets. The work concludes that OT can be integrated into
+   a complete purchase flow, with payment, delivery and payment of the
+   distribution network, hiding the purchased items from the store; non-collusion
+   between the store and the CDN remains an assumption.
 
    \vspace{\onelineskip}
 
@@ -556,7 +576,9 @@
 % inserir lista de abreviaturas e siglas
 % ---
 \begin{siglas}
+  \item[AES] \emph{Advanced Encryption Standard}
   \item[CDN] \emph{Content Delivery Network} (Rede de Distribuição de Conteúdo)
+  \item[GCM] \emph{Galois/Counter Mode}
   \item[GOT] \emph{Generalized Oblivious Transfer}
   \item[HTML] \emph{HyperText Markup Language}
   \item[HTTP] \emph{Hypertext Transfer Protocol}
@@ -571,6 +593,7 @@
   \item[RNF] Requisito Não Funcional
   \item[RSA] Rivest--Shamir--Adleman
   \item[SHA] \emph{Secure Hash Algorithm}
+  \item[SMTP] \emph{Simple Mail Transfer Protocol}
   \item[SPA] \emph{Single-Page Application} (Aplicação de Página Única)
   \item[UC] Caso de Uso (\emph{Use Case})
 \end{siglas}
@@ -636,8 +659,7 @@
 % Conclusão
 % ---
 % Capítulo 6. Considerações Finais
-% Entra quando o app estiver concluído e testado:
-% \include{Cap6-Consideracoes}
+\include{Cap6-Consideracoes}
 
 % ----------------------------------------------------------
 % ELEMENTOS PÓS-TEXTUAIS

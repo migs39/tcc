@@ -186,6 +186,11 @@ Quando uma for decidida, registre aqui (seção abaixo) com data e justificativa
 - **Interface gráfica:** o programa local ganha uma janela nativa com WebView2 (`github.com/jchv/go-webview2`, Go puro, sem cgo), em `cmd/livraria-janela`. A página fica embutida no executável e tem CSP sem rede (`connect-src 'none'`); tudo passa por funções Go ligadas à página. A janela não abre porta localhost e não roda código vindo do site, mantendo a D-001 e a D-004. Wails foi descartado: traria muito mais dependências para o mesmo resultado. A janela só existe no Windows; nos outros sistemas fica a linha de comando. O site e a CDN continuam com HTML gerado no servidor. A CDN ganha `/painel`, protegido por Basic auth com o `SEGREDO_CDN`, e o site ganha `/admin/cdn`, com os lotes e o valor a pagar.
 - **Tema visual (escolhido pelo grupo, 2026-11-23):** o estilo 2, "Cofre criptográfico", entre 5 propostas. É um tema escuro com a fonte monoespaçada JetBrains Mono, títulos em Space Grotesk e verde `#39d98a` para ação e assinatura válida. Fica em `protocolo/tema` (`tema.css` + fontes OFL servidas localmente) e é usado pelos três componentes.
 
+**D-015 — Acesso externo e distribuição do programa local (2026-11-22, grupo pediu "o mais simples e sem gastos")**
+- **Túnel:** Tailscale Funnel, gratuito. O site fica na porta 443 e a CDN na 8443 do mesmo nome `*.ts.net`. O TLS termina nesta máquina, então o Tailscale só repassa bytes cifrados e não vê compras nem downloads. ngrok e Cloudflare Tunnel foram descartados porque decifram o tráfego: com site e CDN no mesmo provedor, ele juntaria compra e download do mesmo cliente, o que equivale à conivência da premissa 5. Os scripts são `abrir_acesso_publico.bat` e `fechar_acesso_publico.bat`.
+- **Endereços embutidos:** `-X main.siteURL` e `-X main.cdnURL` no build, como a chave do pacote. A ordem de prioridade é `SITE_URL`/`CDN_URL` do ambiente, depois o embutido, depois localhost. Com `PUBLICO=https://...ts.net`, o `build_app.bat` gera `bin\LivrariaOT-cliente.zip` com a janela, a CLI, o `ot-helper` e o runtime do VC++ (redistribuição local), fora do site (D-004).
+- **`SEGREDO_CDN`:** aleatório, criado uma vez em `bin\segredo_cdn.txt` pelo `iniciar_demo.bat`. O antigo `demo-local` deixaria qualquer pessoa publicar livros na CDN quando ela fica exposta.
+
 ## Monografia (diretrizes PCS/Poli) — `docs/diretrizes/`
 
 A monografia segue as Diretrizes para Apresentação de Dissertações e Teses da Poli (4ª ed.) e as Recomendações do PCS (2024). Entrega atual: **Projeto de Formatura II** (todos os capítulos).
@@ -268,7 +273,7 @@ go build -ldflags "-X main.chavePacote=<hex>" -o livraria ./cmd/livraria   # ot-
 livraria catalogo | buscar -autor X | grupos | comprar -email E -livros 3,5 [-adiar] | baixar | recuperar resposta-ot.json | reenviar <compra> | compras
 ```
 
-No Windows, `Claude outputs\build_app.bat` compila tudo em `bin\` (site, CDN, `livraria.exe`, `Livraria OT.exe` com a chave pública embutida, ot-helper) e roda os testes; `Claude outputs\iniciar_demo.bat` sobe o Postgres, o site e a CDN e abre a janela.
+No Windows, `Claude outputs\build_app.bat` compila tudo em `bin\` (site, CDN, `livraria.exe`, `Livraria OT.exe` com a chave pública embutida, ot-helper) e roda os testes; `Claude outputs\iniciar_demo.bat` sobe o Postgres, o site e a CDN e abre a janela. `bash "Claude outputs/bateria.sh"` roda a bateria controlada de ponta a ponta (ambiente isolado em :18080/:18081, 24 casos + `go test`; resultado em `bateria.log`). Acesso pela internet: D-015.
 
 O e-mail é um stub: cada mensagem vira um `.eml` em `CAIXA_SAIDA`, com a resposta do OT anexada (`resposta-ot.json`). O gateway é um mock: o pagamento `recusar` é recusado e qualquer outro valor é aprovado.
 Convenções do site: sem log de acesso (só erros, sem dados de visitante); CSP `default-src 'self'`; CSRF via `http.CrossOriginProtection`; avisos após redirect vão por chave fixa na URL, nunca com dados.

@@ -1,0 +1,28 @@
+Livraria OT - programa local (protótipo do TCC, Poli-USP 2026)
+
+Uma livraria em que a loja recebe o pagamento, mas não sabe quais livros
+você comprou. A escolha é protegida por Oblivious Transfer.
+
+Como usar (Windows 10 ou 11):
+1. Extraia esta pasta inteira em qualquer lugar.
+2. Abra "Livraria OT.exe".
+3. Escolha os livros de um mesmo grupo de preço, informe um e-mail e compre.
+   O pagamento é simulado: nada é cobrado. Para testar uma recusa, escolha
+   "Recusar" no pagamento.
+4. Os livros decifrados ficam na aba Biblioteca.
+
+O que fica no seu computador: o catálogo, a semente de cada compra e os
+livros decifrados, em %APPDATA%\livraria-ot. A semente é o segredo da
+compra; sem ela, não há como recuperar os livros.
+
+O programa só conversa com a loja e com a distribuição dos livros (CDN).
+Ele não manda telemetria nem procura atualizações.
+
+Conteúdo da pasta:
+  Livraria OT.exe       janela do programa
+  livraria.exe          a mesma coisa em linha de comando (livraria ajuda)
+  ot-helper.exe         Oblivious Transfer (libOTe, MR19)
+  msvcp140*.dll,
+  vcruntime140*.dll     runtime do Visual C++ usado pelo ot-helper
+
+Código-fonte: https://github.com/migs39/tcc

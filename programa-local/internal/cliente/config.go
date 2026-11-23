@@ -8,21 +8,33 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"tcc/protocolo"
 )
 
-func getenv(k, padrao string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
+func getenv(k, p string) string { return padrao(os.Getenv(k), p) }
+
+func padrao(v, p string) string {
+	if v != "" {
+		return strings.TrimRight(v, "/")
 	}
-	return padrao
+	return p
+}
+
+// Embutidos são os valores gravados no executável na compilação
+// (-ldflags "-X main.chavePacote=... -X main.siteURL=... -X main.cdnURL=...").
+// Assim o programa distribuído já sai apontando para o site e a CDN públicos.
+type Embutidos struct {
+	ChavePacote, SiteURL, CDNURL string
 }
 
 // Configurar monta o cliente a partir das variáveis de ambiente (ver o
-// comando livraria) e da chave pública do pacote embutida na compilação.
-func Configurar(chaveEmbutida string) (*Cliente, error) {
-	h := chaveEmbutida
+// comando livraria) e dos valores embutidos na compilação. Para os endereços,
+// a variável de ambiente vence o valor embutido, que vence o localhost.
+// O programa só fala com esses dois endereços (D-004).
+func Configurar(e Embutidos) (*Cliente, error) {
+	h := e.ChavePacote
 	if h == "" {
 		h = os.Getenv("CHAVE_PACOTE_PUB")
 	}
@@ -40,8 +52,8 @@ func Configurar(chaveEmbutida string) (*Cliente, error) {
 	}
 	return &Cliente{
 		Pasta:       pasta,
-		SiteURL:     getenv("SITE_URL", "http://localhost:8080"),
-		CDNURL:      getenv("CDN_URL", "http://localhost:8081"),
+		SiteURL:     getenv("SITE_URL", padrao(e.SiteURL, "http://localhost:8080")),
+		CDNURL:      getenv("CDN_URL", padrao(e.CDNURL, "http://localhost:8081")),
 		ChavePacote: ed25519.PublicKey(pub),
 		OT:          protocolo.OTHelper{Caminho: caminhoOT()},
 	}, nil

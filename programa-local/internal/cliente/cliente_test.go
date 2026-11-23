@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -21,5 +22,27 @@ func TestAusentes(t *testing.T) {
 	}
 	if got := ausentes(cp); !reflect.DeepEqual(got, []string{"B"}) {
 		t.Fatalf("ausentes = %v, esperado [B]", got)
+	}
+}
+
+// D-004: o programa fala só com o site e a CDN configurados; a variável de
+// ambiente vence o endereço embutido, que vence o localhost.
+func TestConfigurarEnderecos(t *testing.T) {
+	chave := strings.Repeat("ab", 32)
+	t.Setenv("LIVRARIA_DADOS", t.TempDir())
+	t.Setenv("SITE_URL", "")
+	t.Setenv("CDN_URL", "")
+	c, err := Configurar(Embutidos{ChavePacote: chave})
+	if err != nil || c.SiteURL != "http://localhost:8080" || c.CDNURL != "http://localhost:8081" {
+		t.Fatalf("padrão: %v %q %q", err, c.SiteURL, c.CDNURL)
+	}
+	c, _ = Configurar(Embutidos{ChavePacote: chave, SiteURL: "https://loja.exemplo/", CDNURL: "https://loja.exemplo:8443"})
+	if c.SiteURL != "https://loja.exemplo" || c.CDNURL != "https://loja.exemplo:8443" {
+		t.Fatalf("embutido: %q %q", c.SiteURL, c.CDNURL)
+	}
+	t.Setenv("SITE_URL", "http://outro:9000")
+	c, _ = Configurar(Embutidos{ChavePacote: chave, SiteURL: "https://loja.exemplo"})
+	if c.SiteURL != "http://outro:9000" {
+		t.Fatalf("variável não venceu: %q", c.SiteURL)
 	}
 }

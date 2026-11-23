@@ -5,8 +5,7 @@
 Este capítulo apresenta a transformação dos requisitos do
 \autoref{cap:especificacao} no produto: as tecnologias utilizadas, o projeto e
 a implementação da solução, com as decisões tomadas e as alternativas
-descartadas, e os testes e a avaliação. As fases 4 e 5 do método ainda estão
-em andamento, e o capítulo registra o estado em que se encontram.
+descartadas, e os testes e a avaliação dos requisitos.
 
 \section{Tecnologias Utilizadas}\label{sec:tecnologias}
 
@@ -230,7 +229,7 @@ dos OTs correspondentes aos bits de $i$. A privacidade da escolha diante do
 sistema web é garantia do protocolo; a de que o cliente não abre outras
 posições depende de modelar o SHA-256 como oráculo aleatório (premissa).
 
-\item \textbf{Cifra dos livros:} AES-256-GCM, com uma chave aleatória por livro
+\item \textbf{Cifra dos livros:} AES-256-GCM (\emph{Advanced Encryption Standard}, chave de 256 bits, no modo \emph{Galois/Counter Mode}), com uma chave aleatória por livro
 e o identificador do livro como dado associado.
 
 \item \textbf{Grupos, reenvio e pagamento:} grupo mínimo de 5 livros; reenvio
@@ -244,7 +243,10 @@ sem livro.
 \item \textbf{Semente:} toda a aleatoriedade do cliente numa compra (receptor
 do OT, mensagens dos tokens e fatores de cegamento) é derivada de uma semente
 de 256 bits gravada antes do envio. Com ela e a resposta recebida por e-mail, o
-programa local refaz a compra interrompida.
+programa local refaz a compra interrompida. A semente fica num arquivo legível
+apenas pelo usuário, sem senha: quem tem acesso à conta do usuário já tem os
+livros decifrados, e uma senha criaria outra forma de perder o acesso. A
+proteção recomendada é a cifragem de disco do sistema operacional.
 
 \item \textbf{Programa local:} em Go, com linha de comando e uma janela gráfica
 para Windows que usa o componente WebView2. A página da janela é embutida no
@@ -258,8 +260,24 @@ web registra a quantidade e o valor de cada lote.
 CDN antes de decifrar e não informa ao sistema web se alguma chave falhou, de
 modo que sua comunicação é a mesma em qualquer caso.
 
+\item \textbf{Momento do download:} sem atraso artificial. Correlacionar o
+horário da compra, visto pelo sistema web, com o do download, visto pela CDN,
+exige que os dois compartilhem informações, o que a premissa de não conivência
+exclui; o reporte da CDN não leva horários. O programa local permite adiar o
+download a pedido do cliente.
+
 \item \textbf{Interface:} um único tema visual para os três componentes, com
 fontes servidas pelos próprios componentes, sem recursos de terceiros.
+
+\item \textbf{Distribuição e acesso externo:} o programa local é distribuído
+como um arquivo compactado, fora do sistema web, com os endereços públicos do
+sistema web e da CDN definidos na compilação e o \emph{runtime} do compilador
+C++ ao lado do binário do OT. Para a demonstração, o sistema web e a CDN são
+expostos à internet por um túnel em que a conexão cifrada termina no próprio
+servidor do projeto, de modo que o provedor do túnel não vê compras nem
+downloads. Um túnel que decifrasse o tráfego e atendesse o sistema web e a CDN
+ao mesmo tempo observaria a compra e o download do mesmo cliente, o que
+equivaleria à conivência que a premissa exclui.
 \end{itemize}
 
 
@@ -363,9 +381,9 @@ Descartada \\
 
 \subsection{Estado da implementação}\label{sec:estado}
 
-Esta seção registra o andamento da Fase 4 em 22 de novembro de 2026. Os
-três componentes estão implementados e o fluxo de compra roda de ponta a
-ponta. O código está no
+Esta seção registra o estado final da implementação, em 22 de novembro de
+2026. Os três componentes estão implementados e o fluxo de compra roda de
+ponta a ponta, com todos os requisitos funcionais essenciais. O código está no
 repositório do projeto (\url{https://github.com/migs39/tcc}).
 
 \begin{table}[H]
@@ -389,7 +407,7 @@ repositório do projeto (\url{https://github.com/migs39/tcc}).
 7 & Emissão de tokens com assinatura cega & RF16 & Concluído \\
 8 & Recebimento e validação do reporte da CDN & RF18, UC17 & Concluído \\
 9 & Reenvio da resposta do OT & RF15 & Concluído \\
-10 & Testes de privacidade e de carga & RNF02--RNF05 & Parcial \\
+10 & Testes de privacidade e de carga & RNF02--RNF05 & Concluído \\
 \bottomrule
 \end{tabularx}
 \fonte{Elaborado pelos autores.}
@@ -448,82 +466,302 @@ O binário auxiliar que expõe o libOTe compila no Windows e no Linux, e a
 requisição do receptor é idêntica byte a byte quando gerada com a mesma
 semente, o que confirma a premissa da execução síncrona com semente.
 
-\subsection{Questões em aberto}
+\subsection{Limitações conhecidas}
 
 \begin{itemize}
-\item Valor da remuneração da CDN por token (o sistema web já registra a
-quantidade por lote).
-\item Proteção da semente armazenada no programa local, além da permissão do
-arquivo.
-\item Compromissos das chaves dos livros no pacote do catálogo, para o
-programa local conferir as chaves extraídas (defesa contra o ataque de falha
-seletiva no OT).
-\item Interface gráfica do programa local.
-\item Integração com um gateway de pagamento e um serviço de e-mail reais.
-\item Momento do download logo após a compra, que a CDN observa; o programa
-local permite adiar o download.
+\item \textbf{Pagamento e e-mail:} o \emph{gateway} é simulado, atrás de uma
+interface que permite trocá-lo por um real, o que exige conta de lojista. O
+e-mail é gravado em arquivo ou enviado por um servidor SMTP (\emph{Simple Mail
+Transfer Protocol}) configurável.
+\item \textbf{Janela gráfica:} existe apenas para Windows; nos demais sistemas
+fica a linha de comando.
+\item \textbf{Divergência com a versão anterior da especificação:} o programa
+local acessa a rede, restrito ao sistema web e à CDN, enquanto a versão 2 o
+previa sem rede. A privacidade da escolha continua sendo garantia do protocolo,
+porque o código do receptor não é fornecido pelo sistema web.
+\item \textbf{Ataque de falha seletiva:} o pacote do catálogo não leva
+compromissos das chaves dos livros. A defesa é o comportamento uniforme do
+programa local na rede, uma escolha de engenharia, e não uma garantia formal.
 \end{itemize}
 
 % ---------------------------------------------------------------------------
 
 \section{Testes e Avaliação}\label{sec:testes}
 
+A avaliação seguiu as três questões da Fase 5 do método: eficácia, isto é, o
+atendimento aos requisitos; privacidade, isto é, a impossibilidade de o sistema
+web inferir a escolha do cliente; e desempenho. Ela foi feita em três níveis:
+testes automatizados de cada componente, uma bateria controlada de ponta a
+ponta com os três componentes em execução e medições de tempo e de vazão.
+
 \subsection{Testes automatizados}
 
-O sistema web tem 29 testes automatizados, executados contra um banco
-PostgreSQL real, cada teste em um esquema isolado. Os grupos de testes são:
+Os testes automatizados rodam com o comando \texttt{go test} em cada módulo. Os
+que dependem de banco usam um PostgreSQL real, com um esquema isolado por
+teste, e os que dependem do OT chamam o binário auxiliar do libOTe. Na execução
+final, nenhum teste foi pulado. A \autoref{tab:testes-auto} resume os grupos de
+testes.
 
-\begin{itemize}
-\item \textbf{Administradores (9 testes):} formato e verificação do resumo de
-senha; cadastro e validações; autenticação; desativação, que encerra sessões
-e bloqueia o acesso; troca de senha, que encerra as sessões; sessão guardada
-apenas como resumo.
-\item \textbf{Catálogo (9 testes):} preço fora do conjunto recusado pelo
-código e pelo banco (RF03); regras de faixas e categorias; validação de ano e
-ISBN; sequência e imutabilidade das versões de grupo; capas e miniaturas.
-\item \textbf{Pacote do catálogo (3 testes):} conteúdo e ordem dos grupos;
-determinismo; geração de versões; recusa de pacote adulterado, de número de
-versão trocado e de chave errada.
-\item \textbf{Interface web (8 testes):} acesso administrativo restrito a
-administradores autenticados; recusa de requisições de outra origem; fluxo
-completo do catálogo; revalidação do pacote; página pública sem cookies,
-scripts ou recursos de terceiros.
-\end{itemize}
+\begin{table}[H]
+\centering
+\caption{Testes automatizados por componente}\label{tab:testes-auto}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.2\textwidth}
+  >{\raggedright\arraybackslash}p{0.07\textwidth} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Componente} & \textbf{Testes} & \textbf{O que verificam} \\
+\midrule
+Protocolo comum & 6 &
+O cliente recupera exatamente as chaves escolhidas e nenhuma outra posição abre
+(RF12); a mesma semente gera a mesma requisição, byte a byte; o tamanho da
+requisição não depende da escolha; os tokens são válidos, reproduzíveis a
+partir da semente e diferentes do que o sistema web viu (RF16); cifra dos
+livros. \\
+\addlinespace
+Sistema web: administradores & 9 &
+Resumo de senha; cadastro e validações; autenticação; desativação e troca de
+senha encerram as sessões; sessão guardada apenas como resumo (RF01). \\
+\addlinespace
+Sistema web: catálogo & 9 &
+Preço fora do conjunto recusado pelo código e pelo banco (RF03); regras de
+faixas e categorias; ano e ISBN; sequência e imutabilidade das versões de
+grupo; capas e miniaturas (RF02). \\
+\addlinespace
+Sistema web: pacote do catálogo & 3 &
+Conteúdo e ordem dos grupos; determinismo; recusa de pacote adulterado, de
+versão trocada e de chave errada (RF04). \\
+\addlinespace
+Sistema web: interface & 9 &
+Acesso restrito a administradores; recusa de requisições de outra origem e de
+formulários fora de UTF-8; fluxo do catálogo; página pública sem cookies,
+\emph{scripts} ou recursos de terceiros. \\
+\addlinespace
+Sistema web: compra & 7 &
+Compra de ponta a ponta com o libOTe; registros e respostas de mesma forma e
+tamanho para escolhas diferentes; e-mail sem chave; cobrança pelo grupo vezes
+N; pagamento recusado sem registro; validações; reenvio dentro e fora do prazo;
+reporte da CDN válido, repetido e adulterado (RF05--RF08, RF13--RF16, RF18). \\
+\addlinespace
+CDN & 1 &
+Entrega só com token da faixa do livro, uma única vez; reporte em lote; tabela
+de tokens sem livro nem horário (RF17, RF18). \\
+\addlinespace
+Programa local & 4 &
+Página da janela sem acesso à rede; validação das chamadas da página;
+endereços do sistema web e da CDN configurados (D-004); aviso de livro já
+baixado que saiu da biblioteca (RF17). \\
+\midrule
+\textbf{Total} & \textbf{48} & \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
 
-Os demais componentes acrescentam os seguintes grupos de testes:
+\subsection{Bateria de testes controlada}
 
-\begin{itemize}
-\item \textbf{Protocolo (6 testes):} o cliente recupera exatamente as chaves
-escolhidas e nenhuma outra posição abre (RF12); a mesma semente gera a mesma
-requisição; o tamanho da requisição não depende da escolha; tokens válidos,
-reproduzíveis a partir da semente e diferentes do que o sistema web viu
-(RF16); cifra dos livros.
-\item \textbf{Compra (7 testes):} compra de ponta a ponta com o binário do
-libOTe; registros e respostas de mesma forma e tamanho para escolhas
-diferentes; e-mail sem chave; cobrança pelo grupo vezes N; pagamento recusado
-sem registro; validações; reenvio dentro e fora do prazo; reporte da CDN
-válido, repetido e adulterado.
-\item \textbf{CDN (1 teste):} entrega só com token da faixa do livro, uma única
-vez; reporte em lote; tabela de tokens sem livro nem horário.
-\end{itemize}
+A bateria controlada exercita o sistema como um cliente o usaria, com os três
+componentes em execução. Um roteiro sobe um ambiente isolado: um banco de dados
+novo, o sistema web e a CDN em portas próprias, um segredo aleatório entre os
+dois e pastas temporárias para os e-mails e os livros cifrados. Em seguida, o
+roteiro cadastra pelo administrador um catálogo conhecido, com seis livros na
+faixa de R\$~19,90 e dois na de R\$~39,90, e envia à CDN o arquivo de cada
+livro. Os casos usam o programa local em linha de comando, cada um com uma
+pasta de dados própria, e conferem o resultado no que o cliente recebe, no
+banco de dados e nos registros de execução. Ao final, o ambiente é apagado.
 
-Um teste de ponta a ponta com os três componentes cobriu o cadastro de livros,
-o envio dos arquivos à CDN, a compra de dois livros de um grupo de seis, a
-decifragem, as recusas (grupo pequeno, grupos diferentes, pagamento recusado),
-a recuperação de uma compra pelo e-mail e o reporte da CDN aceito pelo sistema
-web. Falta o teste de carga concorrente para RNF05.
+A \autoref{tab:bateria} lista os casos. A bateria foi executada em 22 de
+novembro de 2026, num computador com Windows 11 e processador Intel Core
+i7-12700H, e os 24 casos passaram. Na mesma execução, os 48 testes
+automatizados da \autoref{tab:testes-auto} também passaram.
 
+\begin{table}[H]
+\centering
+\caption{Casos da bateria de testes controlada}\label{tab:bateria}
+\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.05\textwidth}
+  >{\raggedright\arraybackslash}p{0.15\textwidth} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Caso} & \textbf{Requisitos} & \textbf{Verificação} \\
+\midrule
+T01 & RF01 & A área administrativa exige autenticação. \\
+T02 & RF01 & Requisição de alteração vinda de outra origem é recusada. \\
+T03 & RF02 & Formulário com texto fora de UTF-8 é recusado antes de chegar ao banco. \\
+T04 & RF04 & A página pública não define cookies nem carrega recursos de outra origem. \\
+T05 & RF04 & O programa local baixa o pacote do catálogo e confere a assinatura Ed25519. \\
+T06 & RF04 & O pacote servido corresponde ao resumo publicado. \\
+T07 & RF04, RNF02 & A busca local por autor devolve exatamente os livros esperados, em menos de 5~s. \\
+T08 & RF07 & Compra num grupo com menos de cinco livros é recusada e nada é gravado. \\
+T09 & RF07 & Compra com livros de grupos diferentes é recusada. \\
+T10 & RF13 & Pagamento recusado: nenhuma compra gravada e nenhum e-mail enviado. \\
+T11 & RF05--RF12, RNF03 & Compra de dois livros: os arquivos decifrados são idênticos aos enviados pelo administrador, em menos de 1~min. \\
+T12 & RF13 & O valor cobrado é o preço da faixa vezes N. \\
+T13 & RF14 & O e-mail leva a resposta do OT e nenhuma das chaves de livro, nem em hexadecimal nem em base64. \\
+T14 & RF15 & O reenvio gera uma nova mensagem ao e-mail original. \\
+T15 & RF07 & Duas compras com escolhas diferentes geram registros com os mesmos campos e respostas de mesmo tamanho. \\
+T16 & RF08, RF16 & A tabela de compras não tem colunas para índices, chaves ou tokens. \\
+T17 & RF07, RF16 & Os registros de execução do sistema web e da CDN não citam livros nem e-mails. \\
+T18 & RF11, RF14 & Uma compra interrompida após o pagamento é concluída com a semente local e o anexo do e-mail. \\
+T19 & RF11 & Sem a semente local, o anexo do e-mail não abre nenhum livro. \\
+T20 & RF17 & Um token já usado não baixa o livro de novo. \\
+T21 & RF17 & Um token forjado é recusado pela CDN. \\
+T22 & RF18 & A CDN reporta os seis tokens num lote, e as tabelas do reporte não têm livro nem horário. \\
+T23 & RF18 & A remuneração da CDN é a quantidade de tokens vezes a tarifa. \\
+T24 & RF18 & Um reporte sem o segredo da CDN é recusado. \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
 
 \subsection{Medições}
 
 As miniaturas de capa, de 200 por 300 pixels em JPEG, mediram de 1,6~KB (capa
 de cor lisa) a 19,8~KB (pior caso, imagem de ruído aleatório). Com mil livros,
-o pacote do catálogo fica abaixo de cerca de 20~MB.
+o pacote do catálogo fica abaixo de cerca de 20~MB. A requisição do OT tem
+1.256 bytes para 19 OTs, e a resposta do \emph{sender}, 64 bytes, mais as
+cifras de Naor--Pinkas.
 
-Com um grupo de 100 livros e N = 5, uma compra leva cerca de 58~ms no sistema
-web, num computador de dois núcleos. O tempo inclui o \emph{sender} do OT, as
-cifras de Naor--Pinkas, a cobrança simulada, cinco assinaturas RSA de 3072
-bits e a gravação. Isso dá cerca de mil compras por minuto em um núcleo, acima
-das 600 de RNF05, e fica muito abaixo do limite de um minuto de RNF03. A
-requisição do OT tem 1.256 bytes para 19 OTs e a resposta do \emph{sender},
-64 bytes.
+O custo de uma compra no sistema web foi medido com um grupo de 100 livros e
+N = 5. O tempo inclui o \emph{sender} do OT, as cifras de Naor--Pinkas, a
+cobrança simulada, cinco assinaturas cegas RSA de 3072 bits e a gravação no
+banco. A requisição de cada cliente foi gerada antes da medição, porque é
+trabalho do programa local. A vazão concorrente foi medida com várias compras
+simultâneas disputando o banco e o binário do OT. A
+\autoref{tab:medicoes} resume os resultados.
+
+\begin{table}[H]
+\centering
+\caption{Custo e vazão das compras no sistema web}\label{tab:medicoes}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{0.17\textwidth} >{\raggedright\arraybackslash}p{0.22\textwidth}@{}}
+\toprule
+\textbf{Ambiente} & \textbf{Compra isolada} & \textbf{Vazão concorrente} \\
+\midrule
+Linux, dois núcleos & 58~ms & --- \\
+Windows 11, i7-12700H, 1 núcleo & 238~ms & 396 compras/min \\
+Windows 11, i7-12700H, 4 núcleos & --- & 1.213 compras/min \\
+Windows 11, i7-12700H, 8 núcleos & --- & 1.702 compras/min \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+No Windows, o perfil de execução atribui cerca de 89~ms por compra às cinco
+assinaturas cegas, cerca de 18~ms cada, porque a biblioteca de assinatura cega
+faz a exponenciação modular com aritmética de precisão arbitrária genérica, e
+cerca de 57~ms ao binário do OT, incluindo a criação do processo. O restante é
+espera de entrada e saída, provavelmente o acesso ao banco de dados executado
+em contêiner; esse componente não foi medido separadamente. Na bateria
+controlada, a compra completa vista pelo cliente, de N = 2 livros num grupo de
+seis, incluindo o OT, os tokens, o download na CDN e a decifragem, levou
+285~ms, e a busca local, 85~ms.
+
+\subsection{Avaliação dos requisitos não funcionais}
+
+A \autoref{tab:avaliacao-rnf} compara as metas com os resultados.
+
+\begin{table}[H]
+\centering
+\caption{Avaliação dos requisitos não funcionais}\label{tab:avaliacao-rnf}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.07\textwidth}
+  >{\raggedright\arraybackslash}p{0.2\textwidth} >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{0.13\textwidth}@{}}
+\toprule
+\textbf{RNF} & \textbf{Meta} & \textbf{Resultado} & \textbf{Situação} \\
+\midrule
+RNF01 & 128 bits de segurança &
+AES-256-GCM nos livros, RSA de 3072 bits nos tokens, Ed25519 no catálogo,
+SHA-256 na derivação de Naor--Pinkas e OT base sobre curva elíptica de 128
+bits de segurança. & Atendido por parâmetro \\
+\addlinespace
+RNF02 & Busca em até 5~s & 85~ms no catálogo da bateria; a busca é local e
+não depende da rede. & Atendido \\
+\addlinespace
+RNF03 & Compra em até 1~min & 285~ms de ponta a ponta na bateria; 238~ms no
+sistema web com n = 100 e N = 5. & Atendido \\
+\addlinespace
+RNF04 & E-mail em até 1~min & A mensagem é enfileirada na própria compra e
+gravada em seguida; o envio por um servidor de e-mail real não foi medido. &
+Atendido no protótipo \\
+\addlinespace
+RNF05 & 600 transações/min & 1.213 compras/min com quatro núcleos; 396 com um
+núcleo no Windows. & Atendido a partir de 4 núcleos \\
+\addlinespace
+RNF06 & 99\% de disponibilidade & Não avaliado: o protótipo não foi operado em
+produção. & Não avaliado \\
+\addlinespace
+RNF07 & 99\% das compras sem suporte & A recuperação pela semente e pelo
+e-mail cobre a falha entre pagamento e entrega (T18); não houve estudo com
+usuários. & Parcial \\
+\addlinespace
+RNF08 & Mudança simples em até 8~h & Não medido; o código é dividido em
+módulos com testes automatizados e roteiros de compilação. & Não avaliado \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+\subsection{Avaliação da privacidade}
+
+A \autoref{tab:avaliacao-privacidade} resume o que cada parte observa no
+sistema implementado e de onde vem cada proteção. Três naturezas são
+distinguidas: garantia formal, que decorre da prova de segurança de um
+protocolo; premissa, que o sistema assume sem poder impor; e escolha de
+engenharia, que reduz um vazamento sem prova formal.
+
+\begin{table}[H]
+\centering
+\caption{Proteções de privacidade do sistema implementado}\label{tab:avaliacao-privacidade}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{0.2\textwidth} >{\raggedright\arraybackslash}p{0.13\textwidth}@{}}
+\toprule
+\textbf{Proteção} & \textbf{Natureza} & \textbf{Evidência} \\
+\midrule
+O sistema web não aprende quais livros do grupo foram escolhidos. &
+Garantia formal (privacidade do receptor no OT de \citeonline{masnyrindal2019}) &
+T15, T16 \\
+\addlinespace
+O cliente não obtém chaves além das N escolhidas. &
+Garantia formal sob o modelo de oráculo aleatório para o SHA-256 &
+Teste do protocolo \\
+\addlinespace
+Os tokens não são ligáveis à compra em que foram emitidos. &
+Garantia formal (assinatura cega, \citeonline{rfc9474}) &
+Teste do protocolo, T16, T22 \\
+\addlinespace
+O sistema web e a CDN não juntam compra e download pelo horário ou pelo
+endereço do cliente. & Premissa de não conivência & T22 (reporte sem horário) \\
+\addlinespace
+O sistema web não observa a navegação nem a busca. &
+Escolha de engenharia (catálogo completo, igual para todos) & T04--T07 \\
+\addlinespace
+A reação do cliente a uma chave errada não revela a escolha. &
+Escolha de engenharia (comportamento uniforme na rede) & Revisão do código \\
+\addlinespace
+O e-mail e o reenvio não entregam chave alguma. &
+Garantia do formato: a resposta só abre com a semente local & T13, T19 \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelos autores.}
+\end{table}
+
+Os testes de privacidade não provam as garantias formais, que vêm das provas
+dos protocolos. O papel deles é verificar que a implementação não as anula por
+um canal lateral: que nada do que o sistema web grava, registra ou responde
+varia com a escolha, e que nenhuma chave sai do computador do cliente.
+
+Duas limitações permanecem. A primeira é o conjunto de anonimato: o sistema web
+sabe o grupo e a quantidade, e a CDN sabe quais livros foram baixados, de modo
+que a escolha fica escondida entre os livros do grupo e os tokens, entre as
+compras da mesma faixa. Com poucos compradores numa faixa, esse conjunto é
+pequeno. A segunda é a correlação por horário e endereço entre a compra e o
+download, que só é possível se o sistema web e a CDN compartilharem
+informações, o que a premissa de não conivência exclui. O programa local
+permite adiar o download para reduzi-la.

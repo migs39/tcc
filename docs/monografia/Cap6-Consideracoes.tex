@@ -2,13 +2,118 @@
 \chapter{Considerações Finais}\label{cap:consideracoes}
 % ===========================================================================
 
-% TODO: preencher ao final do Projeto de Formatura II.
+Este capítulo faz o balanço do trabalho em relação aos objetivos do
+\autoref{cap:introducao}, aponta o que é contribuição dos autores e indica
+caminhos para continuar o projeto.
 
 \section{Conclusões do Projeto de Formatura}
-% Balanço do trabalho: resultados atingidos e não atingidos, com justificativas.
+
+O objetivo geral foi atingido. O protótipo vende livros digitais organizados em
+grupos de mesmo preço, entrega ao cliente as chaves dos N livros escolhidos por
+meio de \emph{Oblivious Transfer} e distribui os livros cifrados por uma CDN,
+de modo que a loja recebe o pagamento sem saber quais livros foram comprados.
+O fluxo roda de ponta a ponta com os três componentes previstos, e todos os
+requisitos funcionais essenciais foram implementados e verificados pela
+bateria controlada da \autoref{sec:testes}.
+
+Quanto aos objetivos específicos:
+
+\begin{itemize}
+\item \textbf{Arquitetura:} a separação entre sistema web, CDN e programa local
+foi mantida do início ao fim. A principal revisão foi permitir que o programa
+local acesse a rede, restrito ao sistema web e à CDN, o que eliminou o
+transporte manual de arquivos sem enfraquecer a garantia sobre a escolha,
+porque o código do receptor continua fora do controle do sistema web.
+
+\item \textbf{Algoritmo criptográfico:} o OT 1-out-of-n de
+\citeonline{naorpinkas1999}, repetido N vezes sobre o OT base de
+\citeonline{masnyrindal2019}, foi integrado por meio da biblioteca libOTe. O
+custo, de N vezes $\lceil \log_2 n \rceil$ OTs base por compra, mostrou-se
+pequeno o bastante para dispensar OT \emph{Extension} nos tamanhos de grupo do
+protótipo.
+
+\item \textbf{Legitimidade sem revelar o conteúdo:} a cobrança pelo grupo e
+pela quantidade, os tokens de uso único com assinatura cega e o reporte da CDN
+apenas com tokens e quantidade permitem cobrar o cliente e remunerar a CDN sem
+que o sistema web aprenda os livros comprados.
+
+\item \textbf{Testes de segurança e desempenho:} os testes mostram que o que o
+sistema web grava, registra e responde não varia com a escolha, e que nenhuma
+chave sai do computador do cliente. As metas de tempo de busca e de compra
+foram atendidas com folga, e a de vazão foi atendida a partir de quatro
+núcleos.
+\end{itemize}
+
+Alguns resultados não foram atingidos ou ficaram parciais. A disponibilidade
+(RNF06), a taxa de compras concluídas sem suporte (RNF07) e o tempo de
+manutenção (RNF08) dependem de operação real e de estudo com usuários, que
+ficaram fora do alcance de um protótipo. O pagamento usa um \emph{gateway}
+simulado, porque um real exige conta de lojista, e a janela gráfica existe
+apenas para Windows. A defesa contra o ataque de falha seletiva no OT é uma
+escolha de engenharia, e não uma garantia formal. Por fim, a não conivência
+entre o sistema web e a CDN continua sendo uma premissa: o sistema reduz o que
+cada parte aprende, mas não impede que as duas juntem o que sabem.
 
 \section{Contribuições}
-% Contribuições do trabalho, ressaltando o que foi efetivamente de autoria da equipe.
+
+A literatura sobre OT com preço e transações oblívias concentra-se nos
+protocolos e em suas provas. A contribuição deste trabalho é de engenharia: um
+sistema completo, que integra o OT a pagamento, entrega e remuneração, e a
+análise do que cada decisão preserva ou enfraquece. São de autoria da equipe:
+
+\begin{itemize}
+\item a arquitetura em três componentes com separação de conhecimento entre
+sistema web, CDN e \emph{gateway}, e a tabela do que cada parte pode saber,
+usada para revisar o código e o esquema do banco;
+\item a simplificação do OT com preço por grupos de mesmo preço, cobrando pelo
+grupo e pela quantidade, com versões imutáveis dos grupos para fixar os
+índices do OT;
+\item a recuperação de compras interrompidas a partir de uma semente da qual
+deriva toda a aleatoriedade do cliente, inclusive o receptor do OT e o
+cegamento dos tokens, o que torna útil o envio da resposta por e-mail sem
+alterar a biblioteca de OT nem guardar seu estado interno;
+\item a remuneração da CDN por tokens de assinatura cega, com uma chave por
+faixa de preço publicada no catálogo assinado, e o reporte em lotes
+embaralhados, sem livro nem horário;
+\item o catálogo como pacote determinístico, assinado e igual para todos, que
+leva a navegação e a busca para o computador do cliente e permite detectar um
+catálogo personalizado;
+\item a implementação dos três componentes, do binário auxiliar sobre o libOTe,
+dos testes de privacidade e da bateria controlada de ponta a ponta.
+\end{itemize}
+
+As primitivas criptográficas não são de autoria da equipe e vêm de bibliotecas
+consolidadas: o OT base do libOTe, a assinatura cega RSA da biblioteca circl e
+as cifras, resumos e assinaturas da biblioteca padrão da linguagem Go. A
+construção de Naor e Pinkas sobre os OTs base foi implementada pela equipe a
+partir do artigo original.
 
 \section{Perspectivas de Continuidade}
-% Trabalhos que podem ser realizados como continuação do projeto.
+
+\begin{itemize}
+\item \textbf{Compromissos das chaves no catálogo:} publicar no pacote
+assinado um compromisso da chave de cada livro, para que o programa local
+confira as chaves extraídas e a defesa contra a falha seletiva deixe de
+depender apenas do comportamento uniforme.
+
+\item \textbf{Conjunto de anonimato e correlação de horários:} estudar o
+tamanho mínimo de grupo e de faixa em função do volume de compras, atrasos ou
+lotes no download e o uso de redes de anonimato, para reduzir o que se pode
+inferir mesmo com conivência entre o sistema web e a CDN.
+
+\item \textbf{Pagamento real com privacidade:} integrar um \emph{gateway} real
+e avaliar meios de pagamento que também escondam a identidade do comprador,
+tema que ficou fora do escopo.
+
+\item \textbf{Desempenho:} reduzir o custo das assinaturas cegas, que dominam o
+tempo da compra, e avaliar OT \emph{Extension} ou OT k-out-of-n para grupos e
+quantidades maiores.
+
+\item \textbf{Portabilidade e usabilidade:} levar a janela gráfica a outros
+sistemas operacionais, oferecer cópia de segurança cifrada da semente e
+conduzir um estudo com usuários para avaliar RNF07.
+
+\item \textbf{Operação:} implantar o sistema web e a CDN em servidores
+independentes, operados por partes diferentes, e medir disponibilidade e vazão
+em condições reais.
+\end{itemize}
