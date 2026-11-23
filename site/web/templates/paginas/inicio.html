@@ -100,7 +100,15 @@ chaves       <span class="x">????????  (só no seu computador)</span></pre>
       <h2>Programa local</h2>
       <p>Windows · gratuito · conversa só com a loja e com a distribuição dos livros, sem telemetria.</p>
     </div>
+    {{if .Cliente.URL}}
+    <div class="lp-download-acao">
+      <a class="botao" href="{{.Cliente.URL}}" rel="noreferrer">Baixar para Windows</a>
+      <p class="lp-nota">Distribuído pelo Release do repositório público, não por esta loja: assim ninguém recebe uma versão só sua.{{if .Cliente.SHA256}} SHA-256 do arquivo:</p>
+      <code class="lp-hash">{{.Cliente.SHA256}}</code>{{else}}</p>{{end}}
+    </div>
+    {{else}}
     <span class="botao lp-desativado" aria-disabled="true">Distribuído pelo repositório</span>
+    {{end}}
   </section>
 </main>
 

@@ -14,6 +14,8 @@
 //	              usada quando SMTP_HOST está vazio
 //	SMTP_HOST, SMTP_PORTA (587), SMTP_USUARIO, SMTP_SENHA, SMTP_DE
 //	              envio real de e-mail (D-014)
+//	CLIENTE_URL, CLIENTE_SHA256  download do programa local (Release do
+//	              repositório, fora deste site: D-004) e o hash mostrado na página
 //	TARIFA_TOKEN_CENTAVOS  remuneração da CDN por token (padrão: 50, D-014)
 package main
 
@@ -104,11 +106,13 @@ func rodar(log *slog.Logger) error {
 		svcCompra.TarifaToken = v
 	}
 	hCompra := compra.NovosHandlers(svcCompra, hAdmin, segredoCDN, tpl, log)
+	hPacote := pacote.NovosHandlers(svcPacote, tpl, log)
+	hPacote.Cliente = pacote.NovoCliente(os.Getenv("CLIENTE_URL"), os.Getenv("CLIENTE_SHA256"))
 
 	srv := &http.Server{
 		Addr: getenv("ENDERECO", "localhost:8080"),
 		Handler: NovoRoteador(tpl, log, hAdmin, catalogo.NovosHandlers(catalogo.NovoServico(pool), hAdmin, tpl, log),
-			pacote.NovosHandlers(svcPacote, tpl, log), hCompra),
+			hPacote, hCompra),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

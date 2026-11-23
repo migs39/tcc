@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"tcc/site/web"
 )
@@ -15,6 +16,28 @@ type Handlers struct {
 	svc *Servico
 	tpl *web.Templates
 	log *slog.Logger
+	// Cliente é onde baixar o programa local. Ele não é servido por este site
+	// (D-004): a página só aponta para um lugar público e igual para todos (o
+	// Release do repositório) e mostra o SHA-256 para conferência.
+	Cliente Cliente
+}
+
+// Cliente é o link de download do programa local e o SHA-256 do arquivo.
+type Cliente struct {
+	URL, SHA256 string
+}
+
+// NovoCliente aceita só endereços https e um SHA-256 em hexadecimal; fora
+// disso, devolve vazio e a página mostra o download como indisponível.
+func NovoCliente(url, sha string) Cliente {
+	sha = strings.ToLower(strings.TrimSpace(sha))
+	if !strings.HasPrefix(url, "https://") {
+		return Cliente{}
+	}
+	if b, err := hex.DecodeString(sha); err != nil || len(b) != 32 {
+		sha = ""
+	}
+	return Cliente{URL: url, SHA256: sha}
 }
 
 func NovosHandlers(svc *Servico, tpl *web.Templates, log *slog.Logger) *Handlers {
@@ -37,12 +60,13 @@ type dadosInicio struct {
 	TamanhoKB      int
 	SHA256         string
 	ChavePublica   string
+	Cliente        Cliente
 }
 
 // inicio é a página pública: o que a loja promete, como funciona e os dados
 // para conferir que todos recebem o mesmo catálogo.
 func (h *Handlers) inicio(w http.ResponseWriter, r *http.Request) {
-	d := dadosInicio{ChavePublica: hex.EncodeToString(h.svc.ChavePublica())}
+	d := dadosInicio{ChavePublica: hex.EncodeToString(h.svc.ChavePublica()), Cliente: h.Cliente}
 	if p, err := h.svc.Atual(r.Context()); err != nil {
 		h.log.Error("gerando pacote para a página inicial", "erro", err)
 	} else {

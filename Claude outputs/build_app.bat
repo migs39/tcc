@@ -21,7 +21,8 @@ cd /d "%RAIZ%\site"
 for /f "delims=" %%K in ('go run ./cmd/chave-pacote') do set CHAVE=%%K
 echo chave publica: !CHAVE!
 if "!CHAVE!"=="" (echo ERRO: chave vazia & exit /b 1)
-set FLAGS=-X main.chavePacote=!CHAVE!
+rem -s -w: sem tabela de simbolos e depuracao (zip menor); -trimpath: sem caminhos desta maquina no binario.
+set FLAGS=-s -w -X main.chavePacote=!CHAVE!
 if not "%PUBLICO%"=="" (
   set FLAGS=!FLAGS! -X main.siteURL=%PUBLICO% -X main.cdnURL=%PUBLICO%:8443
   echo enderecos embutidos: site %PUBLICO%  cdn %PUBLICO%:8443
@@ -31,8 +32,8 @@ go build -o "%RAIZ%\bin\admin-seed.exe" ./cmd/admin-seed
 cd /d "%RAIZ%\cdn"
 go build -o "%RAIZ%\bin\cdn.exe" ./cmd/cdn
 cd /d "%RAIZ%\programa-local"
-go build -ldflags "!FLAGS!" -o "%RAIZ%\bin\livraria.exe" ./cmd/livraria
-go build -ldflags "-H=windowsgui !FLAGS!" -o "%RAIZ%\bin\Livraria OT.exe" ./cmd/livraria-janela
+go build -trimpath -ldflags "!FLAGS!" -o "%RAIZ%\bin\livraria.exe" ./cmd/livraria
+go build -trimpath -ldflags "-H=windowsgui !FLAGS!" -o "%RAIZ%\bin\Livraria OT.exe" ./cmd/livraria-janela
 echo !CHAVE!> "%RAIZ%\bin\chave_pacote.pub"
 if not "%PUBLICO%"=="" (
   echo === pacote do cliente

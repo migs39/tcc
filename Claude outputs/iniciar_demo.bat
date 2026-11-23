@@ -10,6 +10,10 @@ set /p SEGREDO_CDN=<"%RAIZ%\bin\segredo_cdn.txt"
 rem E-mail real (RF14): bin\smtp.env (modelo em smtp.env.exemplo), fora do git.
 rem Sem esse arquivo, os e-mails vao para site\caixa_saida.
 if exist "%RAIZ%\bin\smtp.env" for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b "SMTP_" "%RAIZ%\bin\smtp.env"`) do set "%%A=%%B"
+rem Download do programa local: o site so aponta para o Release do GitHub (D-004)
+rem e mostra o SHA-256 do zip, que precisa ser o mesmo arquivo publicado la.
+set CLIENTE_URL=https://github.com/migs39/tcc/releases/latest/download/LivrariaOT-cliente.zip
+if exist "%RAIZ%\bin\LivrariaOT-cliente.zip" for /f %%H in ('powershell -NoProfile -Command "(Get-FileHash '%RAIZ%\bin\LivrariaOT-cliente.zip').Hash"') do set CLIENTE_SHA256=%%H
 cd /d "%RAIZ%"
 docker compose up -d --wait
 start "Livraria OT - site" /d "%RAIZ%\site" cmd /k "set OT_HELPER=%RAIZ%\bin\ot-helper.exe&& %RAIZ%\bin\site.exe"
